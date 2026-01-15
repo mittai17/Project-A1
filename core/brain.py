@@ -2,9 +2,12 @@ import requests
 import json
 import time
 import os
+import asyncio
+import re
 from colorama import Fore, Style
 from dotenv import load_dotenv
 from core.memory import memory
+from core.mcp_manager import manager as mcp_manager
 
 # Load environment keys
 load_dotenv()
@@ -19,173 +22,175 @@ history = []
 MAX_HISTORY = 10
 
 def load_system_prompt():
-    """Loads the core identity from the markdown file."""
     try:
         path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "SYSTEM_PROMPT.md")
         with open(path, "r") as f:
             return f.read()
-    except Exception as e:
-        print(f"{Fore.RED}[ERROR] Could not load SYSTEM_PROMPT.md: {e}{Style.RESET_ALL}")
-        return "You are A1, a helpful AI assistant."
+    except:
+        return "You are A1, a personal assistant."
 
-# Load once at startup
 SYSTEM_PROMPT_TEXT = load_system_prompt()
 
-def classify_complexity(prompt):
+# --- HEURISTIC ROUTING (Speed Optimization) ---
+def quick_route(prompt):
     """
-    Uses Local LLM to classify task complexity (1-5) and type.
+    Decides model tier without an LLM call (0 latency).
+    Returns: 'local', 'bytez', 'openrouter'
     """
-    # Fast path for very short queries
-    if len(prompt.split()) < 5:
-        return {"complexity": 1, "type": "small_chat"}
+    p_len = len(prompt.split())
+    tokens = prompt.lower()
+    
+    # 1. High Complexity Triggers
+    if "code" in tokens or "script" in tokens or "function" in tokens:
+        return 'bytez' if BYTEZ_KEY else 'local'
+    
+    if "analyze" in tokens or "summarize" in tokens or p_len > 30:
+        return 'openrouter' if OPENROUTER_KEY else 'local'
+        
+    # 2. Default to Local
+    return 'local'
 
-    req = {
-        "model": LOCAL_MODEL,
-        "prompt": f"Analyze this user request: '{prompt}'. Return strictly JSON: {{\"complexity\": <int 1-5>, \"type\": \"<coding|reasoning|chat|system>\"}}. JSON ONLY, NO TEXT.",
-        "stream": False,
-        "format": "json"
-    }
-    try:
-        # Lower timeout for routing to be fast
-        res = requests.post(API_URL, json=req, timeout=3)
-        if res.status_code == 200:
-            return json.loads(res.json()['response'])
-    except:
-        pass
-    return {"complexity": 1, "type": "chat"} # Default
+# --- API CALLS ---
+def call_llm(model_tier, prompt, system_prompt):
+    """
+    Generic wrapper to call the appropriate model provider.
+    """
+    if model_tier == 'bytez' and BYTEZ_KEY:
+        try:
+            print(f"{Fore.CYAN}[BRAIN] Routing to BYTES...{Style.RESET_ALL}")
+            # Placeholder implementation until correct endpoint confirmed
+            # Defaulting to Local fallback to ensure stability
+            pass 
+        except:
+            pass
+            
+    if model_tier == 'openrouter' and OPENROUTER_KEY:
+        try:
+            print(f"{Fore.MAGENTA}[BRAIN] Routing to OPENROUTER...{Style.RESET_ALL}")
+            headers = {
+                "Authorization": f"Bearer {OPENROUTER_KEY}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "http://localhost:3000",
+                "X-Title": "A1"
+            }
+            data = {
+                "model": "google/gemini-2.0-flash-exp:free", # Fast & Smart
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}
+                ]
+            }
+            res = requests.post("https://openrouter.ai/api/v1/chat/completions", json=data, headers=headers, timeout=10)
+            if res.status_code == 200:
+                return res.json()['choices'][0]['message']['content']
+        except Exception as e:
+            print(f"{Fore.RED}[BRAIN] OpenRouter failed: {e}. Fallback to Local.{Style.RESET_ALL}")
 
-def call_local(prompt, system_prompt, context_memories):
+    # LOCAL (Default)
     print(f"{Fore.GREEN}[BRAIN] Routing to LOCAL ({LOCAL_MODEL})...{Style.RESET_ALL}")
-    
-    full_prompt = f"System: {system_prompt}\nMemories: {context_memories}\nUser: {prompt}"
-    
     req = {
         "model": LOCAL_MODEL,
-        "prompt": full_prompt,
-        "stream": False
+        "prompt": f"System: {system_prompt}\nUser: {prompt}",
+        "stream": False,
+        "options": {"num_ctx": 4096}
     }
     try:
         start = time.time()
-        res = requests.post(API_URL, json=req, timeout=120)
-        dt = time.time() - start
-        print(f"{Fore.GREEN}[BRAIN] Local generated in {dt:.2f}s{Style.RESET_ALL}")
+        res = requests.post(API_URL, json=req, timeout=60)
+        print(f"{Fore.GREEN}[BRAIN] Local generated in {time.time()-start:.2f}s{Style.RESET_ALL}")
         if res.status_code == 200:
-             return res.json()['response']
-        return "Local LLM Error."
+            return res.json()['response']
     except Exception as e:
-        return f"Local Error: {e}"
+        return f"Brain Error: {e}"
+    return "Error."
 
-def call_bytez(prompt, system_prompt, context_memories):
-    print(f"{Fore.CYAN}[BRAIN] Routing to BYTEZ (Mid-Tier)...{Style.RESET_ALL}")
-    
-    # Generic wrapper for Bytez
-    headers = {"Authorization": f"Bearer {BYTEZ_KEY}", "Content-Type": "application/json"}
-    
-    # Using generic chat completion endpoint structure
-    url = "https://api.bytez.com/v1/chat/completions" 
-    
-    full_system = f"{system_prompt}\n\nContext Memories:\n{context_memories}"
-    
-    data = {
-        "model": "meta-llama/Llama-3-70b-instruct", 
-        "messages": [
-            {"role": "system", "content": full_system},
-            {"role": "user", "content": prompt}
-        ]
-    }
-    
-    try:
-        res = requests.post(url, json=data, headers=headers, timeout=40)
-        if res.status_code == 200:
-            return res.json()['choices'][0]['message']['content']
-        else:
-            # If Bytez fails (e.g. invalid endpoint), throw to trigger fallback
-            raise Exception(f"Bytez Status {res.status_code}: {res.text}")
-            
-    except Exception as e:
-        print(f"{Fore.RED}[BRAIN] Bytez failed ({e}). Falling back to Local.{Style.RESET_ALL}")
-        return call_local(prompt, system_prompt, context_memories)
-
-def call_openrouter(prompt, system_prompt, context_memories):
-    print(f"{Fore.MAGENTA}[BRAIN] Routing to OPENROUTER (High-Tier)...{Style.RESET_ALL}")
-    
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_KEY}",
-        "Content-Type": "application/json",
-        "HTTP-Referer": "http://localhost:3000",
-        "X-Title": "A1 Assistant"
-    }
-    
-    # High-tier model: Claude 3.5 Sonnet or similar
-    model = "anthropic/claude-3-haiku" 
-    
-    full_system = f"{system_prompt}\n\nContext Memories:\n{context_memories}"
-    
-    data = {
-        "model": model, 
-        "messages": [
-            {"role": "system", "content": full_system},
-            {"role": "user", "content": prompt}
-        ]
-    }
-    
-    try:
-        res = requests.post("https://openrouter.ai/api/v1/chat/completions", json=data, headers=headers, timeout=60)
-        if res.status_code == 200:
-            return res.json()['choices'][0]['message']['content']
-        else:
-             raise Exception(f"OpenRouter Status {res.status_code}")
-    except Exception as e:
-        print(f"{Fore.RED}[BRAIN] OpenRouter failed ({e}). Falling back to Local.{Style.RESET_ALL}")
-        return call_local(prompt, system_prompt, context_memories)
-
-def think(prompt):
+# --- TOOL USE LOOP ---
+async def think_async(prompt):
     """
-    Main Thinking Logic:
-    1. Memory Lookup
-    2. Complexity Classification
-    3. Model Routing
-    4. Execution
+    ReAct Loop:
+    1. Check if tools needed.
+    2. Loop: Thought -> Action -> Observation -> Thought
     """
     global history
-    print(f"{Fore.CYAN}[BRAIN] Analyzing intent...{Style.RESET_ALL}")
-
-    # 0. Basic internal commands
-    if prompt.lower().startswith("remember that") or prompt.lower().startswith("remember:"):
-        fact = prompt.replace("remember that", "").replace("remember:", "").strip()
-        if memory.add_memory(fact):
-            return f"I remembered: {fact}"
-        return "Failed to save memory."
-
-    # 1. Retrieve Memories
+    print(f"{Fore.CYAN}[BRAIN] Thinking...{Style.RESET_ALL}")
+    
+    # 1. Memory
     relevant = memory.retrieve_relevant(prompt)
-    mem_context = "\n".join([f"- {m}" for m in relevant]) if relevant else "No relevant memories."
+    mem_context = "\n".join([f"- {m}" for m in relevant]) if relevant else "None"
     
-    # 2. Classify Complexity
-    meta = classify_complexity(prompt)
-    complexity = meta.get('complexity', 1)
-    task_type = meta.get('type', 'chat')
-    
-    print(f"{Fore.BLUE}[BRAIN] Task: {task_type} | Complexity: {complexity}/5{Style.RESET_ALL}")
-    
-    # 3. Route
-    response = ""
-    
-    if complexity >= 4 and OPENROUTER_KEY:
-        response = call_openrouter(prompt, SYSTEM_PROMPT_TEXT, mem_context)
-    elif complexity == 3 and BYTEZ_KEY:
-        response = call_bytez(prompt, SYSTEM_PROMPT_TEXT, mem_context)
-    else:
-        # Default to Local
-        response = call_local(prompt, SYSTEM_PROMPT_TEXT, mem_context)
-
-    # 4. Update History
-    history.append({"role": "User", "content": prompt})
-    history.append({"role": "Assistant", "content": response})
-    if len(history) > MAX_HISTORY:
-        history.pop(0)
+    # 2. Get Tools (MCP)
+    mcp_tools = await mcp_manager.list_tools()
+    tools_desc = ""
+    for t in mcp_tools:
+        tools_desc += f"- {t['name']}: {t.get('description', 'No desc')} (args: {t.get('inputSchema', {})})\n"
         
+    full_system = f"""{SYSTEM_PROMPT_TEXT}
+    
+=== MEMORY ===
+{mem_context}
+
+=== AVAILABLE TOOLS (MCP) ===
+{tools_desc}
+
+=== INSTRUCTIONS ===
+If you need to use a tool, output specifically:
+[[CALL:tool_name(json_args)]]
+Example: [[CALL:read_file({"path": "/tmp/test.txt"})]]
+
+If no tool is needed, just answer directly.
+"""
+
+    # 3. Quick Route
+    tier = quick_route(prompt)
+    
+    # 4. Agent Loop (Max 3 turns)
+    current_prompt = prompt
+    for turn in range(3):
+        response = call_llm(tier, current_prompt, full_system)
+        
+        # Check for tool call
+        tool_match = re.search(r"\[\[CALL:(\w+)\((.*)\)\]\]", response, re.DOTALL)
+        if tool_match:
+            t_name = tool_match.group(1)
+            t_args_str = tool_match.group(2)
+            print(f"{Fore.YELLOW}[TOOL] Detected call: {t_name}({t_args_str}){Style.RESET_ALL}")
+            
+            # Find server
+            t_def = next((t for t in mcp_tools if t['name'] == t_name), None)
+            if t_def:
+                try:
+                    # Clean args
+                    # This implies valid JSON, heuristic parsing might be needed for loose LLMs
+                    # For now assume LLM follows instruction or we fix JSON
+                    import ast
+                    # Try json, fall back to ast for single quotes
+                    try:
+                        t_args = json.loads(t_args_str)
+                    except:
+                        t_args = ast.literal_eval(t_args_str)
+                        
+                    result = await mcp_manager.call_tool(t_def['server'], t_name, t_args)
+                    print(f"{Fore.YELLOW}[TOOL] Result: {str(result)[:100]}...{Style.RESET_ALL}")
+                    
+                    # Feed back to LLM
+                    current_prompt += f"\n\n[TOOL EXECUTION]\nCall: {t_name}\nResult: {result}\n\nContinue answering the user."
+                    continue # Re-loop
+                except Exception as e:
+                    print(f"{Fore.RED}[TOOL ERROR] {e}{Style.RESET_ALL}")
+            else:
+                print(f"{Fore.RED}[TOOL] Unknown tool: {t_name}{Style.RESET_ALL}")
+        
+        # No tool call, final answer
+        # Update history
+        history.append({"role": "user", "content": prompt})
+        history.append({"role": "assistant", "content": response})
+        if len(history) > MAX_HISTORY:
+            history.pop(0)
+            
+        return response
+
     return response
 
-if __name__ == "__main__":
-    print(think("Hello A1"))
+# Synchronous wrapper for main.py
+def think(prompt):
+    return asyncio.run(think_async(prompt))

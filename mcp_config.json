@@ -1,0 +1,13 @@
+{
+  "github-mcp": {
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-github"],
+    "env": {
+      "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_TOKEN_HERE"
+    }
+  },
+  "sqlite-mcp": {
+    "command": "uvx",
+    "args": ["mcp-server-sqlite", "--db-path", "memory_db/a1.db"]
+  }
+}
