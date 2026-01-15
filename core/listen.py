@@ -2,48 +2,56 @@ import json
 import vosk
 import sounddevice as sd
 import sys
+import queue
+import numpy as np
+import noisereduce as nr
+import time
 from colorama import Fore, Style
 
 SAMPLE_RATE = 16000
 BLOCK_SIZE = 8000
 
-def listen_for_command(model, input_device_index=None, timeout=10):
+def listen_for_command(vosk_model, timeout=10):
     """
-    Listens for a single command.
-    Returns the recognized text or None if no command heard/timeout.
+    Listens for a command.
     """
-    rec = vosk.KaldiRecognizer(model, SAMPLE_RATE)
-    
-    print(f"{Fore.BLUE}[LISTEN] Listening for command...{Style.RESET_ALL}")
-    
-    # Timeout logic: Silence for 'timeout' seconds ends the listening session
-    import time
-    last_activity = time.time()
-    
-    with sd.RawInputStream(samplerate=SAMPLE_RATE, blocksize=BLOCK_SIZE, device=input_device_index, dtype='int16',
-                           channels=1, callback=None) as stream:
-        
-        while True:
-            # Check timeout
-            if time.time() - last_activity > timeout:
-                return None
+    q = queue.Queue()
 
-            data, overflowed = stream.read(BLOCK_SIZE)
-            if overflowed:
-                pass
+    def callback(indata, frames, time, status):
+        q.put(bytes(indata))
+
+    try:
+        rec = vosk.KaldiRecognizer(vosk_model, 16000)
+        
+        # Use int16 directly for Vosk (Simpler, less latency)
+        with sd.RawInputStream(samplerate=16000, blocksize=4000, dtype='int16',
+                               channels=1, callback=callback):
             
-            if rec.AcceptWaveform(bytes(data)):
-                res = json.loads(rec.Result())
-                text = res.get("text", "").strip()
-                if text:
-                    sys.stdout.write("\r" + " " * 80 + "\r")
-                    print(f"{Fore.MAGENTA}[USER]: {text}{Style.RESET_ALL}")
-                    return text
-            else:
-                partial = json.loads(rec.PartialResult())
-                partial_text = partial.get("partial", "").strip()
-                if partial_text:
-                     # Update activity if hearing something
-                     last_activity = time.time()
-                     sys.stdout.write(f"\r{Fore.BLUE}[HEARING]: {partial_text}{Style.RESET_ALL}")
-                     sys.stdout.flush()
+            start_time = time.time()
+            print(f"{Fore.CYAN}[LISTEN] Listening...{Style.RESET_ALL}")
+            
+            while True:
+                if time.time() - start_time > timeout:
+                    return None
+                
+                if not q.empty():
+                    data = q.get()
+                    if rec.AcceptWaveform(data):
+                        res = json.loads(rec.Result())
+                        text = res.get("text", "")
+                        if text:
+                            print(f"{Fore.GREEN}        [USER]: {text}{Style.RESET_ALL}")
+                            return text
+                    else:
+                        # Partial Result (Debug)
+                        partial = json.loads(rec.PartialResult())
+                        if partial.get("partial"):
+                             sys.stdout.write(f"\r{Fore.BLUE}[PARTIAL]: {partial['partial']}{Style.RESET_ALL}")
+                             sys.stdout.flush()
+                             # Reset timeout on activity
+                             start_time = time.time()
+
+    except Exception as e:
+        print(f"{Fore.RED}[LISTEN ERROR] {e}{Style.RESET_ALL}")
+    
+    return None

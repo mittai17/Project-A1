@@ -10,3 +10,4 @@ duckduckgo-search>=5.0.0
 psutil>=5.9.0
 python-dotenv>=1.0.0
 mcp>=0.1.0
+noisereduce>=2.0.0

@@ -135,7 +135,7 @@ async def think_async(prompt):
 === INSTRUCTIONS ===
 If you need to use a tool, output specifically:
 [[CALL:tool_name(json_args)]]
-Example: [[CALL:read_file({"path": "/tmp/test.txt"})]]
+Example: [[CALL:read_file({{"path": "/tmp/test.txt"}})]]
 
 If no tool is needed, just answer directly.
 """
