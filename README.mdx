@@ -91,16 +91,16 @@ A1 follows a modular **Router-Skill** architecture.
 ```mermaid
 graph TD
     User((User)) -->|Voice| Mic[Microphone]
-    Mic -->|Audio| Wake[Wake Word (Vosk Small)]
-    Wake -->|Trigger| Listen[Command Listener (Vosk Large)]
-    Listen -->|Text| Router{Intent Router}
+    Mic -->|Audio| Wake["Wake Word (Vosk Small)"]
+    Wake -->|Trigger| Listen["Command Listener (Vosk Large)"]
+    Listen -->|Text| Router{"Intent Router"}
     
-    Router -->|'Update System'| SkillArch[Arch Linux Skill]
-    Router -->|'Open App'| SkillApp[App Control]
-    Router -->|'Search GitHub'| SkillFOSS[GitHub Skill]
-    Router -->|'General Chat'| Brain[LLM Brain]
+    Router -->|"Update System"| SkillArch[Arch Linux Skill]
+    Router -->|"Open App"| SkillApp[App Control]
+    Router -->|"Search GitHub"| SkillFOSS[GitHub Skill]
+    Router -->|"General Chat"| Brain[LLM Brain]
     
-    Brain -->|Query| Memory[(Qdrant DB)]
+    Brain -->|Query| Memory[("Qdrant DB")]
     SkillArch -->|Output| TTS[Text-to-Speech]
     SkillApp -->|Output| TTS
     Brain -->|Output| TTS
