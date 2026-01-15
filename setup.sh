@@ -1,89 +1,94 @@
 #!/bin/bash
 set -e
 
-# A1 Assistant Setup Script
-# Handles: System deps, Ollama, Models (LLM + Vosk), Python Venv
+# Colors
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
 
-echo "========================================="
-echo "       A1 SYSTEM SETUP ASSISTANT"
-echo "========================================="
+echo -e "${BLUE}=========================================${NC}"
+echo -e "${BLUE}       A1 - SYSTEM SETUP ASSISTANT       ${NC}"
+echo -e "${BLUE}=========================================${NC}"
 
-# 1. Detect Distro and Install System Deps
-echo "[1/6] Installing System Dependencies..."
+# 1. System Dependencies
+echo -e "\n${GREEN}[1/5] Installing System Dependencies...${NC}"
 if [ -f /etc/arch-release ]; then
     echo "Detected Arch Linux."
-    # Check if yay or paru exists for AUR (optional better handling) but stick to pacman
-    sudo pacman -Sy --noconfirm python python-pip portaudio espeak-ng unzip curl
+    sudo pacman -Sy --noconfirm python python-pip portaudio espeak-ng unzip curl git
 elif [ -f /etc/debian_version ]; then
     echo "Detected Debian/Ubuntu."
     sudo apt update
-    sudo apt install -y python3 python3-pip python3-venv portaudio19-dev espeak-ng curl unzip
+    sudo apt install -y python3 python3-pip python3-venv portaudio19-dev espeak-ng curl unzip git
 else
-    echo "Unsupported Distro. Please install 'portaudio' and 'espeak' manually."
+    echo -e "${RED}Unsupported Distro. Please install 'python', 'portaudio', 'espeak-ng' manually.${NC}"
 fi
 
-# 2. Install Ollama
-echo "[2/6] Checking Ollama..."
+# 2. Ollama Setup
+echo -e "\n${GREEN}[2/5] Setting up AI Brain (Ollama)...${NC}"
 if ! command -v ollama &> /dev/null; then
-    echo "Ollama not found. Installing..."
+    echo "Installing Ollama..."
     curl -fsSL https://ollama.com/install.sh | sh
-else
-    echo "Ollama is already installed."
 fi
 
-# 3. Start Ollama and Pull Model
-echo "[3/6] Setting up AI Brain (Llama 3.2)..."
-# Start ollama server in background if not running
+# Start Server if needed
 if ! pgrep -x "ollama" > /dev/null; then
     echo "Starting Ollama server..."
     ollama serve > /dev/null 2>&1 &
-    PID_OLLAMA=$!
-    sleep 5 # Give it time to start
-else
-    echo "Ollama server is running."
+    sleep 5
 fi
 
-echo "Pulling llama3.2:3b (this may take a while)..."
+echo "Pulling models..."
 ollama pull llama3.2:3b
+ollama pull nomic-embed-text
 
-# 4. Download Vosk Model
-echo "[4/6] Setting up Ear (Vosk Model)..."
+# 3. Vosk Model (Speech Recognition)
+echo -e "\n${GREEN}[3/5] Setting up Hearing (Vosk)...${NC}"
 mkdir -p models
-if [ ! -d "models/vosk-model-small-en-us-0.15" ]; then
-    cd models
-    echo "Downloading model..."
-    wget -nc https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
-    echo "Unzipping..."
-    unzip -o vosk-model-small-en-us-0.15.zip
-    rm vosk-model-small-en-us-0.15.zip
-    cd ..
-else
-    echo "Vosk model already exists."
-fi
+cd models
 
-# 5. Python Environment
-echo "[5/6] Setting up Python Environment..."
+# Check if Large model exists
+if [ -d "vosk-model-en-us-0.22" ]; then
+    echo "High-Accuracy Model found."
+else
+    echo -e "${BLUE}Download High-Accuracy Model (1.8GB)? [Y/n]${NC}"
+    read -r response
+    if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]] || [[ -z "$response" ]]; then
+        echo "Downloading Vosk Large Model..."
+        wget -c https://alphacephei.com/vosk/models/vosk-model-en-us-0.22.zip
+        unzip -q -o vosk-model-en-us-0.22.zip
+        rm vosk-model-en-us-0.22.zip
+    else
+        echo "Downloading Vosk Small Model (Lightweight)..."
+        wget -c https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
+        unzip -q -o vosk-model-small-en-us-0.15.zip
+        rm vosk-model-small-en-us-0.15.zip
+    fi
+fi
+cd ..
+
+# 4. Python Environment
+echo -e "\n${GREEN}[4/5] Setting up Python Environment...${NC}"
 if [ ! -d "venv" ]; then
     python3 -m venv venv
 fi
 
-# Activate and Install
 source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# 6. Final Check
-echo "[6/6] Verifying..."
-echo "-----------------------------------------"
-echo "System Audio:"
-if command -v espeak-ng &> /dev/null; then echo " [OK] espeak-ng"; else echo " [FAIL] espeak-ng missing"; fi
+# 5. Configuration
+echo -e "\n${GREEN}[5/5] Final Configuration...${NC}"
+if [ ! -f ".env" ]; then
+    echo "Creating .env file..."
+    touch .env
+    echo "# Add API Keys here if you want to use Cloud Models" >> .env
+    echo "OPENROUTER_API_KEY=" >> .env
+    echo "BYTEZ_API_KEY=" >> .env
+fi
 
-echo "AI Models:"
-if ollama list | grep -q "llama3.2:3b"; then echo " [OK] Llama 3.2"; else echo " [FAIL] Llama 3.2 missing"; fi
-if [ -d "models/vosk-model-small-en-us-0.15" ]; then echo " [OK] Vosk Model"; else echo " [FAIL] Vosk Model missing"; fi
-echo "-----------------------------------------"
-
-echo "SETUP COMPLETE!"
-echo "To run A1:"
-echo "  source venv/bin/activate"
-echo "  python main.py"
+echo -e "\n${BLUE}=========================================${NC}"
+echo -e "${GREEN}       SETUP COMPLETE! 🚀                ${NC}"
+echo -e "${BLUE}=========================================${NC}"
+echo -e "To start A1:"
+echo -e "  ${GREEN}./venv/bin/python main.py${NC}"

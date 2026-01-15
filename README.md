@@ -1,121 +1,128 @@
-# A1 - Advanced Offline Voice Assistant
+# A1 - Local AI Assistant
 
-A1 is a production-grade, privacy-first voice assistant built for Linux systems. It runs entirely offline, leveraging local LLMs (Llama 3.2) and high-accuracy speech recognition models.
+<div align="center">
 
-**Version:** 1.2 (Indian Accent Edition)
-**Engine:** Python 3.14 + Ollama + Vosk Pro
+![Status](https://img.shields.io/badge/Status-Beta-blue?style=for-the-badge)
+![Python](https://img.shields.io/badge/Python-3.10%2B-yellow?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+![Platform](https://img.shields.io/badge/Platform-Linux-orange?style=for-the-badge)
 
----
+**A production-grade, privacy-first voice assistant inspired by Jarvis.**  
+*Runs entirely offline on consumer hardware.*
 
-## 🚀 Features
+[Features](#features) • [Installation](#installation) • [Usage](#usage) • [Architecture](#architecture)
 
-### 1. **Offline Intelligence**
-   - **Brain**: Powered by `llama3.2:3b` running locally via Ollama.
-   - **Memory**: Remembers conversation context (last 10 turns).
-   - **Error Correction**: Automatically infers meaning from accent mistranscriptions (e.g., "The clinics" -> "Linux").
-
-### 2. **High-Fidelity Hearing**
-   - **Wake Word**: Always-on listening for **"Hey A1"**, **"Computer"**, **"System"**, or **"Wake Up"**.
-   - **Speech Recognition**: Uses the **Vosk En-US 0.22 (1.8GB)** professional model for high accuracy.
-   - **Feedback**: Visual VU meter and real-time "What I'm hearing" text for debugging.
-
-### 3. **Voice Response**
-   - **Engine**: `espeak-ng` via `pyttsx3`.
-   - **Accent**: Configured for **Indian English** (`inc/hi`).
-   - **Optimization**: Tuned speech rate (125wpm) for maximum clarity.
-
-### 4. **System Integration**
-   - **Hardware Acceleration**: Automatically uses NVIDIA RTX 3050 for LLM inference.
-   - **Latency**: Sub-second wake response; ~3s full LLM thought generation.
+</div>
 
 ---
 
-## 🛠️ Architecture
+## ⚡ What is A1?
 
-```mermaid
-graph LR
-    Mic[Microphone] --> Wake[Wake Word Engine (Vosk Small)]
-    Wake --> |Trigger| Listen[Command Listener (Vosk Large)]
-    Listen --> |Text| Brain[Contextual Brain (Llama 3.2)]
-    Brain --> |Response| TTS[Text-to-Speech (Indian Accent)]
-    TTS --> Speaker[Speaker]
-```
+A1 is an intelligent agent designed for **Linux Power Users**. Unlike Alexa or Siri, A1 is deeply integrated into your OS. It can control applications, manage system updates (Arch Linux), search GitHub for open-source tools, and remember your preferences using a local vector database.
 
-- **`core/wake.py`**: Lightweight listener. Scans for triggers while ignoring background noise.
-- **`core/listen.py`**: Heavyweight transcriber. Activates only after wake word to save resources.
-- **`core/brain.py`**: Manages chat history and sanitizes input before sending to Ollama.
-- **`core/speak.py`**: Handles audio output, forcing specific voice IDs and speech rates.
+### Core Capabilities
+
+| Feature | Description | Tech Stack |
+| :--- | :--- | :--- |
+| **🧠 Offline Brain** | Powered by **Llama 3.2** running locally. Fast, private, smart. | `Ollama` |
+| **🗣️ Hearing** | Professional-grade speech recognition. | `Vosk Pro (1.8GB)` |
+| **🔊 Voice** | Fast, clear, low-latency text-to-speech. | `pyttsx3` / `espeak-ng` |
+| **💾 Memory** | Remembers facts, preferences, and context long-term. | `Qdrant` |
+| **🛠️ Skills** | Controls Apps, Updates Arch Linux, Searches Web/GitHub. | `Python` |
 
 ---
 
-## 📦 Installation guide
+## 🚀 Installation
 
-### 1. Prerequisites (Arch Linux)
-```bash
-sudo pacman -S python python-pip portaudio espeak-ng ollama
-```
+### Prerequisites
+- **OS**: Linux (Arch Linux recommended, tested on Ubuntu).
+- **GPU**: NVIDIA GPU recommended for LLM speed (optional).
 
-### 2. Automated Setup
-We have provided scripts to handle the heavy lifting.
+### Quick Start
 
 ```bash
-# 1. Base Setup (Deps, Venv, Small Models)
+# 1. Clone the repository
+git clone https://github.com/mittai17/Project-A1.git
+cd Project-A1
+
+# 2. Run the Setup Wizard
 chmod +x setup.sh
 ./setup.sh
-
-# 2. Upgrade to Pro Models (Reliable Hearing)
-chmod +x upgrade.sh
-./upgrade.sh
 ```
 
-### 3. Manual Model Check
-Ensure your `models/` directory looks like this:
-```
-A1/models/
-├── vosk-model-en-us-0.22/  (Large 1.8GB model)
-└── vosk-model-small-en-us-0.15/ (Small wake model - optional)
-```
+The script will:
+1.  Install system dependencies (Python, PortAudio, etc).
+2.  Install **Ollama** and pull the `llama3.2:3b` model.
+3.  Download the **Vosk** speech model.
+4.  Create a virtual environment and install Python packages.
 
 ---
 
 ## 🎮 Usage
 
-1. **Start the Brain**:
-   Ensure Ollama is running in the background.
-   ```bash
-   ollama serve
-   ```
+Start the assistant:
 
-2. **Run A1**:
-   ```bash
-   source venv/bin/activate
-   python main.py
-   ```
+```bash
+./venv/bin/python main.py
+```
 
-3. **Interact**:
-   - **Say**: "Computer" or "Hey A1"
-   - **Wait for**: "I'm listening"
-   - **Ask**: "What is the capital of India?"
-   - **Reply**: It will answer in an Indian English voice.
+### Voice Commands
 
-4. **Continuous Mode**:
-   A1 stays awake after the first question. You can ask follow-ups immediately. It goes back to sleep after 8 seconds of silence.
+**Wake Word:** "Hey A1", "Computer", "System"
 
----
+| Intent | Example Command | Action |
+| :--- | :--- | :--- |
+| **App Control** | "Open Firefox", "Close Terminal" | Launches/Closes apps. |
+| **Web Search** | "Search for latest Linux news" | Searches DuckDuckGo & Summarizes. |
+| **FOSS Discovery** | "Find open source alternative to Photoshop" | Searches GitHub for tools. |
+| **System (Arch)** | "Update system", "System stats" | Runs `yay -Syu` or checks RAM/CPU. |
+| **Memory** | "Remember that my API key is 123" | Stores fact in Qdrant. |
+| **Chat** | "Explain Quantum Physics" | Multi-turn conversation. |
 
-## 🔧 Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| **"NameError: np not defined"** | Occurs in older code. Fixed in v1.1. Run `git pull` or check `core/wake.py`. |
-| **Microphone not hearing me** | Check the VU meter in the terminal. If it stays empty `[MIC]`, check system PulseAudio settings. |
-| **Too Fast/Robotic Voice** | Edit `core/speak.py` and lower `engine.setProperty('rate', 125)`. |
-| **"Connection Refused"** | Run `ollama serve` in a separate terminal. |
+### Interruption
+You can interrupt A1 at any time by saying **"Stop"**, **"Wait"**, or **"Cancel"**.
 
 ---
 
-## 📜 Update Log
+## 🏗️ Architecture
 
-- **v1.0**: Initial Release (Vosk Small, Standard TTS).
-- **v1.1**: Added continuous conversation & simplified wake words ("Computer").
-- **v1.2**: Switched to "Large" Vosk model for accent handling. Added Contextual Memory to Brain. Changed Voice to Indian English. Reverted Whisper due to Python 3.14 conflict.
+A1 follows a modular **Router-Skill** architecture.
+
+```mermaid
+graph TD
+    User((User)) -->|Voice| Mic[Microphone]
+    Mic -->|Audio| Wake[Wake Word (Vosk Small)]
+    Wake -->|Trigger| Listen[Command Listener (Vosk Large)]
+    Listen -->|Text| Router{Intent Router}
+    
+    Router -->|'Update System'| SkillArch[Arch Linux Skill]
+    Router -->|'Open App'| SkillApp[App Control]
+    Router -->|'Search GitHub'| SkillFOSS[GitHub Skill]
+    Router -->|'General Chat'| Brain[LLM Brain]
+    
+    Brain -->|Query| Memory[(Qdrant DB)]
+    SkillArch -->|Output| TTS[Text-to-Speech]
+    SkillApp -->|Output| TTS
+    Brain -->|Output| TTS
+    TTS --> Speaker
+```
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions!
+1.  Fork the repo.
+2.  Create a new feature branch (`git checkout -b feature/amazing-skill`).
+3.  Add your skill in `skills/`.
+4.  Register it in `core/router.py` and `main.py`.
+5.  Submit a Pull Request.
+
+## 📄 License
+
+MIT License. Free and Open Source.
+
+---
+<div align="center">
+Built with ❤️ by <a href="https://github.com/mittai17">Mittai</a>
+</div>
