@@ -1,4 +1,4 @@
-from faster_whisper import WhisperModel
+import whisper
 import sounddevice as sd
 import numpy as np
 import scipy.io.wavfile as wav
@@ -6,21 +6,25 @@ import os
 import time
 from colorama import Fore, Style
 import sys
+import torch
 
 # Configuration
-MODEL_SIZE = "small.en" # 'tiny.en', 'small.en', 'base.en', 'medium.en'
-COMPUTE_TYPE = "float16" # 'float16' for GPU, 'int8' for CPU
-DEVICE = "cuda" # 'cuda' or 'cpu'. Auto-fallback handled below.
+# 'base' is a good balance. 'small' or 'medium' for better accuracy but slower.
+MODEL_SIZE = "medium.en" 
 
 class Ear:
     def __init__(self):
         print(f"{Fore.YELLOW}[WHISPER] Loading model '{MODEL_SIZE}'...{Style.RESET_ALL}")
         try:
-            self.model = WhisperModel(MODEL_SIZE, device=DEVICE, compute_type=COMPUTE_TYPE)
-            print(f"{Fore.GREEN}[WHISPER] Model loaded on {DEVICE}.{Style.RESET_ALL}")
+            # Check for CUDA
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            print(f"{Fore.BLUE}[WHISPER] Using device: {device}{Style.RESET_ALL}")
+            
+            self.model = whisper.load_model(MODEL_SIZE, device=device)
+            print(f"{Fore.GREEN}[WHISPER] Model loaded.{Style.RESET_ALL}")
         except Exception as e:
-            print(f"{Fore.RED}[WHISPER WARNING] GPU failed ({e}). Fallback to CPU/INT8.{Style.RESET_ALL}")
-            self.model = WhisperModel(MODEL_SIZE, device="cpu", compute_type="int8")
+            print(f"{Fore.RED}[WHISPER ERROR] Failed to load model: {e}{Style.RESET_ALL}")
+            sys.exit(1)
 
     def listen(self, timeout=8):
         """
@@ -37,9 +41,10 @@ class Ear:
         recording_start = time.time()
         has_spoken = False
         
+        # 1. Record
         with sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype='int16') as stream:
             while True:
-                # Check global timeout (if nothing ever spoken)
+                # Global timeout check
                 if not has_spoken and (time.time() - recording_start > timeout):
                     return None
                 
@@ -48,8 +53,10 @@ class Ear:
                 audio_chunk = data.flatten()
                 audio_buffer.append(audio_chunk)
                 
-                # Calculate volume
+                # Calculate volume for VAD (Voice Activity Detection)
                 volume = np.linalg.norm(audio_chunk) / len(audio_chunk)
+                
+                # Visual Feedback
                 bars = "█" * int(volume // 50)
                 sys.stdout.write(f"\r{Fore.CYAN}[REC] {bars:<10} {Style.RESET_ALL}")
                 sys.stdout.flush()
@@ -62,21 +69,35 @@ class Ear:
                     if has_spoken and (time.time() - silence_start > SILENCE_LIMIT):
                         break # Stop recording
         
-        # Transcribe
+        # 2. Transcribe
         print(f"\n{Fore.CYAN}[WHISPER] Transcribing...{Style.RESET_ALL}")
         
-        # Save temp file (FasterWhisper requires file or complex generator)
+        # Save temp file
         full_audio = np.concatenate(audio_buffer)
         wav.write("temp_command.wav", SAMPLE_RATE, full_audio)
         
-        segments, info = self.model.transcribe("temp_command.wav", beam_size=5)
-        
-        text = " ".join([segment.text for segment in segments]).strip()
-        os.remove("temp_command.wav")
-        
-        if text:
-            print(f"{Fore.MAGENTA}[USER]: {text}{Style.RESET_ALL}")
-            return text
+        try:
+            # Method A: Language-Model Biasing (Contextual Priming)
+            # We provide a prompt with common vocabulary to bias the decoder towards correct system commands.
+            # This fixes "fire" vs "firefox" and improves accuracy for technical terms.
+            system_context = "A1 system commands. Linux Arch. Keywords: open firefox, google chrome, vs code, terminal, alacritty, kitty, hyprland, wayland, update system, pacman, yay, install, search weather, news, python, code, script, github, clone, push, pull."
+            
+            # OpenAI Whisper Transcribe with Context
+            result = self.model.transcribe("temp_command.wav", fp16=False, initial_prompt=system_context)
+            text = result["text"].strip()
+            
+            # Clean up
+            if os.path.exists("temp_command.wav"):
+                os.remove("temp_command.wav")
+            
+            if text:
+                print(f"{Fore.MAGENTA}[USER]: {text}{Style.RESET_ALL}")
+                return text
+                
+        except Exception as e:
+            print(f"{Fore.RED}[WHISPER ERROR] Transcription failed: {e}{Style.RESET_ALL}")
+            return None
+            
         return None
 
 if __name__ == "__main__":

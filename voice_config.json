@@ -1,0 +1,7 @@
+{
+    "user_name": "User",
+    "use_speaker_adaptive": true,
+    "enrollment_file": "user_profile.npy",
+    "similarity_threshold": 0.25,
+    "adaptation_rate": 0.05
+}

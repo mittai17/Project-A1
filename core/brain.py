@@ -15,6 +15,7 @@ load_dotenv()
 OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY")
 BYTEZ_KEY = os.getenv("BYTEZ_API_KEY")
 LOCAL_MODEL = "llama3.2:3b"
+ROUTER_MODEL = "qwen2.5:0.5b" # Ultra-fast routing model
 API_URL = "http://localhost:11434/api/generate"
 
 # Short-term history
@@ -31,23 +32,62 @@ def load_system_prompt():
 
 SYSTEM_PROMPT_TEXT = load_system_prompt()
 
-# --- HEURISTIC ROUTING (Speed Optimization) ---
-def quick_route(prompt):
+# --- INTELLIGENT ROUTING (Qwen2.5) ---
+def determine_model_tier(prompt):
     """
-    Decides model tier without an LLM call (0 latency).
+    Uses Qwen2.5-0.5B to deterministically route queries.
     Returns: 'local', 'bytez', 'openrouter'
     """
-    p_len = len(prompt.split())
+    
+    # Fast regex checks first
     tokens = prompt.lower()
-    
-    # 1. High Complexity Triggers
-    if "code" in tokens or "script" in tokens or "function" in tokens:
+    if "python" in tokens or "script" in tokens or "function" in tokens:
         return 'bytez' if BYTEZ_KEY else 'local'
-    
+        
+    router_prompt = f"""You are a routing model.
+Your ONLY task is to decide which Model Tier should handle the input.
+
+Rules:
+- local: Simple request, chat, system command, personal question.
+- openrouter: Complex analysis, reasoning, vision, web search summary, creative writing.
+- bytez: Coding, specialized math, complex technical tasks.
+
+Return exactly one word:
+local
+openrouter
+bytez
+
+USER INPUT
+{prompt}
+
+OUTPUT"""
+
+    try:
+        req = {
+            "model": ROUTER_MODEL,
+            "prompt": router_prompt,
+            "stream": False,
+            "options": {
+                "temperature": 0.0,
+                "num_predict": 5,
+                "num_ctx": 256,
+                "top_p": 1,
+            }
+        }
+        res = requests.post(API_URL, json=req, timeout=2)
+        if res.status_code == 200:
+            result = res.json()['response'].strip().lower()
+            if "openrouter" in result: return "openrouter"
+            if "bytez" in result: return "bytez"
+            if "local" in result: return "local"
+    except:
+        pass
+        
+    # Fallback heuristic
+    p_len = len(prompt.split())
     if "analyze" in tokens or "summarize" in tokens or p_len > 30:
         return 'openrouter' if OPENROUTER_KEY else 'local'
         
-    # 2. Default to Local
     return 'local'
 
 # --- API CALLS ---
@@ -82,7 +122,9 @@ def call_llm(model_tier, prompt, system_prompt):
             }
             res = requests.post("https://openrouter.ai/api/v1/chat/completions", json=data, headers=headers, timeout=10)
             if res.status_code == 200:
-                return res.json()['choices'][0]['message']['content']
+                result = res.json()
+                if 'choices' in result:
+                    return result['choices'][0]['message']['content']
         except Exception as e:
             print(f"{Fore.RED}[BRAIN] OpenRouter failed: {e}. Fallback to Local.{Style.RESET_ALL}")
 
@@ -130,18 +172,21 @@ async def think_async(prompt):
 {mem_context}
 
 === AVAILABLE TOOLS (MCP) ===
-{tools_desc}
+{tools_desc if tools_desc else "No external tools available currently."}
 
 === INSTRUCTIONS ===
-If you need to use a tool, output specifically:
+1. Use the above tools ONLY if they are listed in "AVAILABLE TOOLS".
+2. DO NOT hallucinate or invent tools that are not listed.
+3. If you need to use a tool, output specifically:
 [[CALL:tool_name(json_args)]]
-Example: [[CALL:read_file({{"path": "/tmp/test.txt"}})]]
 
-If no tool is needed, just answer directly.
+Example format: [[CALL:tool_name({{"arg": "value"}})]]
+
+If no tool is needed or relevant, just answer the user directly.
 """
 
-    # 3. Quick Route
-    tier = quick_route(prompt)
+    # 3. Intelligent Route (Qwen)
+    tier = determine_model_tier(prompt)
     
     # 4. Agent Loop (Max 3 turns)
     current_prompt = prompt
@@ -161,13 +206,22 @@ If no tool is needed, just answer directly.
                 try:
                     # Clean args
                     # This implies valid JSON, heuristic parsing might be needed for loose LLMs
-                    # For now assume LLM follows instruction or we fix JSON
                     import ast
-                    # Try json, fall back to ast for single quotes
                     try:
+                        # Fix common LLM mistakes (like q="val")
+                        # 1. Try pure JSON
                         t_args = json.loads(t_args_str)
                     except:
-                        t_args = ast.literal_eval(t_args_str)
+                        try:
+                            # 2. Try Python literal (handles single quotes or q="val" if formatted as dict)
+                            if "=" in t_args_str and ":" not in t_args_str:
+                                # transform key="val" -> {"key": "val"}
+                                t_args_str = f"dict({t_args_str})"
+                            
+                            t_args = ast.literal_eval(t_args_str)
+                        except:
+                            print(f"{Fore.RED}[TOOL ERROR] Could not parse args: {t_args_str}{Style.RESET_ALL}")
+                            continue
                         
                     result = await mcp_manager.call_tool(t_def['server'], t_name, t_args)
                     print(f"{Fore.YELLOW}[TOOL] Result: {str(result)[:100]}...{Style.RESET_ALL}")

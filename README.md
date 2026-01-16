@@ -25,7 +25,8 @@ A1 is an intelligent agent designed for **Linux Power Users**. Unlike Alexa or S
 | Feature | Description | Tech Stack |
 | :--- | :--- | :--- |
 | **🧠 Offline Brain** | Powered by **Llama 3.2** running locally. Fast, private, smart. | `Ollama` |
-| **🗣️ Hearing** | Professional-grade speech recognition. | `Vosk Pro (1.8GB)` |
+| **🗣️ Hearing** | Professional-grade speech recognition. | `Vosk Pro` / `Whisper` |
+| **🎙️ Voice ID** | Speaker-Adaptive ASR & Biometric Verification. | `SpeechBrain` / `ECAPA-TDNN` |
 | **🔊 Voice** | Fast, clear, low-latency text-to-speech. | `pyttsx3` / `espeak-ng` |
 | **💾 Memory** | Remembers facts, preferences, and context long-term. | `Qdrant` |
 | **🛠️ Skills** | Controls Apps, Updates Arch Linux, Searches Web/GitHub. | `Python` |
@@ -48,6 +49,10 @@ cd Project-A1
 # 2. Run the Setup Wizard
 chmod +x setup.sh
 ./setup.sh
+
+# 3. Enroll Your Voice (Optional but Recommended)
+# Records samples to learn your voice for higher accuracy.
+./venv/bin/python core/voice_enroll.py
 ```
 
 The script will:
@@ -92,7 +97,7 @@ A1 follows a modular **Router-Skill** architecture.
 graph TD
     User((User)) -->|Voice| Mic[Microphone]
     Mic -->|Audio| Wake["Wake Word (Vosk Small)"]
-    Wake -->|Trigger| Listen["Command Listener (Vosk Large)"]
+    Wake -->|Trigger| Listen["Adaptive Ear (Whisper + SpeakerID)"]
     Listen -->|Text| Router{"Intent Router"}
     
     Router -->|"Update System"| SkillArch[Arch Linux Skill]
@@ -120,11 +125,12 @@ graph TD
 </details>
 
 <details>
-<summary><strong>🗣️ Ears (Vosk)</strong></summary>
+<summary><strong>🗣️ Ears (Adaptive ASR)</strong></summary>
 
-- **Wake Word:** Small Model (50MB) for efficiency.
-- **Command:** Large Model (1.8GB) for accuracy.
-- **Microphone:** PyAudio stream, 16kHz mono.
+- **Wake Word:** Vosk Small (Low Power).
+- **Transcription:** OpenAI Whisper `base.en`.
+- **Identity:** SpeechBrain `ECAPA-TDNN` (Speaker Verification).
+- **Adaptation:** Learns user voice profile over time.
 </details>
 
 <details>
@@ -146,6 +152,12 @@ graph TD
 ---
 
 ## 📜 Project History
+
+### v1.1.0 - Adaptive Voice & Vision
+*   **Speaker Adaptive ASR**: Implemented `AdaptiveEar` using **Whisper** and **SpeechBrain**. System now learns the user's voice to improve accuracy and bias towards technical terms (`adaptive_asr.py`).
+*   **Enrollment Tool**: Added `voice_enroll.py` to capture and verify user voice identity.
+*   **Vision Support**: Integrated rudimentary screen analysis (Vision pipeline).
+*   **Dependency Fixes**: Patched `huggingface_hub` and `torchaudio` compatibility for Arch Linux.
 
 ### v0.2.x - Feature Enhancement & Refinement
 *   **Enhanced Documentation**: Switched to MDX for README to support better formatting and interactivity. Added comprehensive `DOCUMENTATION.md`.

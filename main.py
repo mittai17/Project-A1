@@ -10,7 +10,7 @@ init()
 # Import core modules
 # ... imports ...
 try:
-    from core import wake, listen, brain, speak, router
+    from core import wake, listen, listen_whisper, brain, speak, router, vision, adaptive_asr
     from skills import app_control, web, arch, foss
 except ImportError as e:
     print(f"{Fore.RED}Error importing modules: {e}{Style.RESET_ALL}")
@@ -48,7 +48,12 @@ def main():
         print(f"{Fore.RED}[SYSTEM] No audio input found: {e}{Style.RESET_ALL}")
         sys.exit(1)
 
-    # 3. Startup Sound
+    # 3. Initialize Whisper (Ear)
+    # ear = listen_whisper.Ear()
+    print(f"{Fore.YELLOW}[SYSTEM] Initializing Adaptive AI Ear...{Style.RESET_ALL}")
+    ear = adaptive_asr.AdaptiveEar()
+
+    # 4. Startup Sound
     speak.speak("A one online. High-Accuracy Mode.")
 
     # 4. Main Loop
@@ -66,8 +71,8 @@ def main():
                         next_command = None
                         print(f"{Fore.MAGENTA}[CHAINED COMMAND]: {command}{Style.RESET_ALL}")
                     else:
-                        # Listen for command (Pro Vosk Model)
-                        command = listen.listen_for_command(vosk_model, timeout=8)
+                        # Listen for command (Whisper)
+                        command = ear.listen(timeout=8)
                     
                     if command:
                         # Route
@@ -97,11 +102,21 @@ def main():
                         elif intent == "foss_search":
                             speak.speak(f"Searching GitHub for {args}...", vosk_model)
                             response = foss.find_opensource(args)
+                        elif intent == "vision_query":
+                            speak.speak("Checking screen...", vosk_model)
+                            response = vision.analyze_screen(args)
                         else:
                             # Conversation
                             response = brain.think(args)
                             
-                        next_command = speak.speak(response, vosk_model)
+                        # Speak response
+                        speak.speak(response, vosk_model)
+                        
+                        # Go back to Sleep (break inner loop) to wait for Wake Word again
+                        # This prevents the system from staying open and timing out constantly
+                        # logic: Wake -> Listen -> Act -> Sleep
+                        next_command = None 
+                        break
                     else:
                         print(f"{Fore.YELLOW}[SYSTEM] Timeout.{Style.RESET_ALL}")
                         speak.speak("Offline.")

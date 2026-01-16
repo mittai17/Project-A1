@@ -75,7 +75,7 @@ def speak(text, vosk_model=None):
                     if rec.AcceptWaveform(data):
                         res = json.loads(rec.Result())
                         t = res.get("text", "")
-                        if any(w in t for w in trigger_words) or len(t) > 10:
+                        if any(w in t for w in trigger_words):
                             print(f"{Fore.YELLOW}[INTERRUPT] Heard: '{t}'{Style.RESET_ALL}")
                             p_aplay.kill()
                             p_piper.kill()
