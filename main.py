@@ -17,7 +17,7 @@ except ImportError as e:
     sys.exit(1)
 
 # Configuration
-MODEL_PATH = "models/vosk-model-en-us-0.22"
+MODEL_PATH = "models/vosk-model-small-en-us-0.15"
 
 def check_model():
     if not os.path.exists(MODEL_PATH):

@@ -104,6 +104,15 @@ def route_query(text):
         clean_text = text_lower.replace("search for", "").replace("search", "").strip()
         return {"intent": "web_search", "args": clean_text if clean_text else text}
 
+    # --- System Control (Install / Update) ---
+    if "update system" in text_lower:
+         return {"intent": "arch_update", "args": ""}
+
+    match_install = re.search(r"^install (.+)", text_lower)
+    if match_install:
+         package = match_install.group(1).strip()
+         return {"intent": "arch_install", "args": package}
+
     # --- 2. AI Router (Optimized Qwen) ---
     ai_route = route_query_ai(text)
     

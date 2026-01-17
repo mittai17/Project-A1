@@ -8,7 +8,7 @@
 ![Platform](https://img.shields.io/badge/Platform-Linux-orange?style=for-the-badge)
 
 **A production-grade, privacy-first voice assistant inspired by Jarvis.**  
-*Runs entirely offline on consumer hardware.*
+*Runs entirely offline on consumer hardware with optional cloud vision capabilities.*
 
 [Features](#features) • [Installation](#installation) • [Usage](#usage) • [Architecture](#architecture) • [History](#-project-history)
 
@@ -18,15 +18,16 @@
 
 ## ⚡ What is A1?
 
-A1 is an intelligent agent designed for **Linux Power Users**. Unlike Alexa or Siri, A1 is deeply integrated into your OS. It can control applications, manage system updates (Arch Linux), search GitHub for open-source tools, and remember your preferences using a local vector database.
+A1 is an intelligent agent designed for **Linux Power Users**. Unlike Alexa or Siri, A1 is deeply integrated into your OS. It can control applications, see your screen, manage system updates, and remember your preferences using a local vector database.
 
 ### Core Capabilities
 
 | Feature | Description | Tech Stack |
 | :--- | :--- | :--- |
 | **🧠 Offline Brain** | Powered by **Llama 3.2** running locally. Fast, private, smart. | `Ollama` |
-| **🗣️ Hearing** | Professional-grade speech recognition. | `Vosk Pro` / `Whisper` |
-| **🎙️ Voice ID** | Speaker-Adaptive ASR & Biometric Verification. | `SpeechBrain` / `ECAPA-TDNN` |
+| **�️ Vision** | Screen analysis & visual Q&A. | `Gemini 2.0 Flash` (via OpenRouter) |
+| **🗣️ Hearing** | Adaptive speech recognition that learns your voice. | `Whisper` + `Vosk` |
+| **🎙️ Voice ID** | Biometric speaker verification. | `SpeechBrain` / `ECAPA-TDNN` |
 | **🔊 Voice** | Fast, clear, low-latency text-to-speech. | `pyttsx3` / `espeak-ng` |
 | **💾 Memory** | Remembers facts, preferences, and context long-term. | `Qdrant` |
 | **🛠️ Skills** | Controls Apps, Updates Arch Linux, Searches Web/GitHub. | `Python` |
@@ -37,7 +38,8 @@ A1 is an intelligent agent designed for **Linux Power Users**. Unlike Alexa or S
 
 ### Prerequisites
 - **OS**: Linux (Arch Linux recommended, tested on Ubuntu).
-- **GPU**: NVIDIA GPU recommended for LLM speed (optional).
+- **GPU**: NVIDIA GPU recommended for LLM speed.
+- **Dependencies**: `scrot` (for screen capture on some Linux distros).
 
 ### Quick Start
 
@@ -50,7 +52,11 @@ cd Project-A1
 chmod +x setup.sh
 ./setup.sh
 
-# 3. Enroll Your Voice (Optional but Recommended)
+# 3. Add API Keys (Optional)
+# Edit .env to add OPENROUTER_API_KEY for Vision support.
+nano .env
+
+# 4. Enroll Your Voice (Recommended)
 # Records samples to learn your voice for higher accuracy.
 ./venv/bin/python core/voice_enroll.py
 ```
@@ -77,6 +83,7 @@ Start the assistant:
 
 | Intent | Example Command | Action |
 | :--- | :--- | :--- |
+| **Vision** | "Look at this error", "What is on my screen?" | Captures screen & analyzes it. |
 | **App Control** | "Open Firefox", "Close Terminal" | Launches/Closes apps. |
 | **Web Search** | "Search for latest Linux news" | Searches DuckDuckGo & Summarizes. |
 | **FOSS Discovery** | "Find open source alternative to Photoshop" | Searches GitHub for tools. |
@@ -91,23 +98,25 @@ You can interrupt A1 at any time by saying **"Stop"**, **"Wait"**, or **"Cancel"
 
 ## 🏗️ Architecture
 
-A1 follows a modular **Router-Skill** architecture.
+A1 follows a modular **Router-Skill** architecture with a ReAct loop for complex tasks.
 
 ```mermaid
 graph TD
     User((User)) -->|Voice| Mic[Microphone]
-    Mic -->|Audio| Wake["Wake Word (Vosk Small)"]
+    Mic -->|Audio| Wake["Wake Word (Vosk)"]
     Wake -->|Trigger| Listen["Adaptive Ear (Whisper + SpeakerID)"]
     Listen -->|Text| Router{"Intent Router"}
     
+    Router -->|"Vision"| Vision[Vision Skill (Gemini)]
     Router -->|"Update System"| SkillArch[Arch Linux Skill]
     Router -->|"Open App"| SkillApp[App Control]
-    Router -->|"Search GitHub"| SkillFOSS[GitHub Skill]
+    Router -->|"Search"| SkillWeb[Web Tools]
     Router -->|"General Chat"| Brain[LLM Brain]
     
     Brain -->|Query| Memory[("Qdrant DB")]
+    Vision -->|Analysis| Brain
+    
     SkillArch -->|Output| TTS[Text-to-Speech]
-    SkillApp -->|Output| TTS
     Brain -->|Output| TTS
     TTS --> Speaker
 ```
@@ -119,16 +128,24 @@ graph TD
 <details>
 <summary><strong>🧠 Brain (Llama 3.2)</strong></summary>
 
-- **Model:** `llama3.2:3b` (Quantized 4-bit).
+- **Model:** `llama3.2:3b` (Quantized 4-bit) for general chat.
 - **Inference:** Ollama API.
-- **Latency:** ~2-3s on CPU, <1s on GPU.
+- **Agentic Loop:** Implements ReAct pattern for tool usage.
+</details>
+
+<details>
+<summary><strong>👁️ Vision (Gemini 2.0)</strong></summary>
+
+- **Model:** `google/gemini-2.0-flash-exp:free` via OpenRouter.
+- **Input:** Full resolution screenshots.
+- **Latency:** ~2-4s depending on network.
 </details>
 
 <details>
 <summary><strong>🗣️ Ears (Adaptive ASR)</strong></summary>
 
 - **Wake Word:** Vosk Small (Low Power).
-- **Transcription:** OpenAI Whisper `base.en`.
+- **Transcription:** OpenAI Whisper `base.en` (High Accuracy).
 - **Identity:** SpeechBrain `ECAPA-TDNN` (Speaker Verification).
 - **Adaptation:** Learns user voice profile over time.
 </details>
@@ -138,7 +155,7 @@ graph TD
 
 - **Engine:** `espeak-ng` + `pyttsx3`.
 - **Latency:** <200ms (Instant).
-- **Features:** Interruption handling (Barge-in).
+- **Features:** Interruption handling.
 </details>
 
 <details>
@@ -146,36 +163,27 @@ graph TD
 
 - **Type:** Vector Database.
 - **Embedding:** `nomic-embed-text`.
-- **Usage:** Semantic search for relevant context before answering.
+- **Usage:** Semantic search for relevant context.
 </details>
 
 ---
 
 ## 📜 Project History
 
-### v1.1.0 - Adaptive Voice & Vision
-*   **Speaker Adaptive ASR**: Implemented `AdaptiveEar` using **Whisper** and **SpeechBrain**. System now learns the user's voice to improve accuracy and bias towards technical terms (`adaptive_asr.py`).
-*   **Enrollment Tool**: Added `voice_enroll.py` to capture and verify user voice identity.
-*   **Vision Support**: Integrated rudimentary screen analysis (Vision pipeline).
-*   **Dependency Fixes**: Patched `huggingface_hub` and `torchaudio` compatibility for Arch Linux.
+### v1.1.0 - Visual Intelligence & Adaptive Hearing
+*   **Vision Module**: Added ability to "see" the screen using Gemini 2.0 Flash. Triggers include "look at screen", "analyze this".
+*   **Adaptive ASR**: Integrated `Whisper` for transcription and `SpeechBrain` for speaker identification. A1 now learns who is speaking.
+*   **Voice Enrollment**: New tool `voice_enroll.py` to capture user voice signatures.
 
-### v0.2.x - Feature Enhancement & Refinement
-*   **Enhanced Documentation**: Switched to MDX for README to support better formatting and interactivity. Added comprehensive `DOCUMENTATION.md`.
-*   **MCP Integration**: Integrated Model Context Protocol (MCP) to allow dynamic tool discovery and agentic behavior.
-*   **Brain Optimization**: improved `brain.py` for faster responses and better context management (ReAct loop).
-*   **Speech Recognition**: Added noise reduction to `listen.py` for better accuracy in noisy environments.
-*   **TTS Upgrade**: Switched to higher quality TTS engines and fixed voice settings.
+### v0.2.x - Feature Enhancement
+*   **Agentic Core**: Refactored `brain.py` to use a ReAct loop for better reasoning and tool use.
+*   **MCP Integration**: Added Model Context Protocol support.
+*   **Documentation**: Migrated to MDX-style README and added `DOCUMENTATION.md`.
 
-### v0.1.x - Initial Fixes & Bypasses
-*   **Blocker Bypass**: Implemented logic to bypass restricted application detection in `blocker-app-detection.js` by injecting a return false statement.
-*   **IPC Interception**: Injected code in `renderer.js` to intercept generic IPC messages and prevent malpractice reporting (sendParamsToMain).
-*   **Stability Fixes**: Resolved `NameError` related to numpy and `AnsiFore` color issues.
-
-### v0.1.0 - Initial Release
-*   **Core Logic**: Established `wake`, `listen`, `brain`, `speak` modules.
-*   **Offline First**: Local Llama 3.2 inference via Ollama.
-*   **Voice Interface**: Vosk for STT and `pyttsx3`/`espeak-ng` for TTS.
-*   **Command Router**: Basic intent routing for system control.
+### v0.1.x - Foundations
+*   **Blocker Bypass**: Implemented logic to bypass restricted application detection.
+*   **IPC Interception**: Code injection for renderer security bypasses.
+*   **Core Systems**: Established basic Wake/Listen/Speak loop with Llama 3.2.
 
 ---
 
@@ -190,10 +198,11 @@ graph TD
 </details>
 
 <details>
-<summary><strong>"NameError: np not defined"</strong></summary>
+<summary><strong>Vision queries fail</strong></summary>
 
-- This occurs in older versions (v1.0).
-- Run `git pull` to update to the latest version.
+- Ensure `OPENROUTER_API_KEY` is set in `.env`.
+- Ensure you have internet access (Vision uses cloud API).
+- On Linux, install `scrot`: `sudo pacman -S scrot` or `sudo apt install scrot`.
 </details>
 
 <details>
@@ -209,9 +218,9 @@ graph TD
 
 We welcome contributions!
 1.  Fork the repo.
-2.  Create a new feature branch (`git checkout -b feature/amazing-skill`).
+2.  Create a new feature branch.
 3.  Add your skill in `skills/`.
-4.  Register it in `core/router.py` and `main.py`.
+4.  Register it in `core/router.py`.
 5.  Submit a Pull Request.
 
 ## 📄 License
