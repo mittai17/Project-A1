@@ -47,3 +47,16 @@ tags: [roadmap, future, planning]
 ## 🧪 Experimental Notes
 - **Testing**: We are currently testing `Phi-3-Mini` as a potential faster replacement for the Router logic.
 - **Hardware**: Targeting optimization for 6GB VRAM GPUs (RTX 3050/4050 mobile).
+
+---
+
+## 🏗️ Global Task Tracker
+> [!NOTE] Auto-Generated
+> Scans the entire vault for `#todo` or uncompleted checkboxes.
+
+```dataview
+TASK
+FROM ""
+WHERE !completed AND file.name != "Roadmap"
+GROUP BY file.name
+```

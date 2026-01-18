@@ -30,8 +30,16 @@ Daily usage, voice commands, and maintenance.
 - [[Guides/Obsidian_Setup.md|Obsidian Plugin Guide]]
 
 ### 🔹 Daily Logs
-Track progress and updates.
-- [[Daily_Logs/2026-01-18|2026-01-18 (Multilingual Update)]]
+> [!NOTE] Dynamic List
+> Showing last 5 entries.
+
+```dataview
+TABLE file.mtime as "Modified", file.tags as "Tags"
+FROM "Daily_Logs"
+WHERE file.name != "00_Template"
+SORT file.name DESC
+LIMIT 5
+```
 
 ---
 
