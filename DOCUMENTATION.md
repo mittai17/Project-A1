@@ -1,6 +1,6 @@
 # A1 Technical Documentation
 
-> **Version**: 1.2.0 (Multilingual Beta)  
+> **Version**: 1.3.0 (Voice Cloning Beta)  
 > **Date**: January 2026
 
 This documentation provides a comprehensive technical overview of the A1 Voice Assistant, detailing its modules, data flow, and configuration options.
@@ -10,7 +10,7 @@ This documentation provides a comprehensive technical overview of the A1 Voice A
 ## 1. System Overview
 
 A1 is designed as a **Local-First, Hybrid-Cloud** assistant. 
-- **Local**: Speech-to-Text, Wake Word, Text-to-Speech, Reasoning (Llama), Memory, and System Control.
+- **Local**: Speech-to-Text, Wake Word, Text-to-Speech (XTTS v2 + Piper), Reasoning (Llama), Memory, and System Control.
 - **Cloud**: Vision Analysis (Gemini 2.0) via OpenRouter (optional).
 
 The system operates on a **ReAct (Reason + Act)** loop, allowing it to dynamically decide when to use tools (like searching the web or checking system stats) versus when to rely on its internal knowledge.
@@ -29,7 +29,7 @@ A1/
 │   ├── adaptive_asr.py    # Whisper STT + Speaker ID
 │   ├── brain.py           # Llama 3.1 Logic & Tool Use
 │   ├── router.py          # Regex/Logic Intent Router
-│   ├── speak.py           # Piper TTS Wrapper
+│   ├── speak.py           # XTTS v2 + Piper TTS Dual Engine
 │   ├── vision.py          # Screen Capture & Gemini API
 │   ├── memory.py          # Qdrant Vector DB Manager
 │   └── mcp_manager.py     # Model Context Protocol Handler
@@ -40,7 +40,7 @@ A1/
 │   └── web.py             # DuckDuckGo Search
 │
 ├── piper/                 # TTS Engine (Binaries & Models)
-├── models/                # Local ML Models (Vosk, SpeakerID)
+├── models/                # Local ML Models (Vosk, SpeakerID, speaker.wav)
 └── memory_db/             # Qdrant Persistence Storage
 ```
 
@@ -65,13 +65,26 @@ The "Brain" is an agent powered by **Llama 3.1 8B**.
 -   **Context**: It retrieves the last 10 conversation turns + relevant semantic memories from Qdrant.
 -   **Tool Use**: It can emit special tokens `[[CALL:tool_name(args)]]` which are intercepted by the system to execute Python functions or MCP tools.
 
-### 🗣️ Speech (Piper TTS)
+### 🗣️ Speech (Dual-Engine TTS)
 **File**: `core/speak.py`
 
-A1 uses **Piper Neural TTS** for output.
--   **Why Piper?**: Coqui XTTS was too heavy/slow for this specific CPU setup. Piper is instant.
--   **Voice**: Configured to use an **Indian Accent** model (`te_IN` - Telugu) which serves as a neutral Indian English proxy, pronouncing Indian names/terms much better than US/UK voices.
--   **Audio Output**: Streams raw PCM audio to `aplay` for minimum latency.
+A1 now uses a **dual-engine TTS system**:
+
+| Engine | Use Case | Quality |
+| :--- | :--- | :--- |
+| **XTTS v2** | English (Voice Cloning) | ⭐⭐⭐⭐⭐ |
+| **Piper** | Tamil/Fallback | ⭐⭐⭐⭐ |
+
+#### XTTS v2 (Voice Cloning)
+-   **Model**: `tts_models/multilingual/multi-dataset/xtts_v2`
+-   **Reference Audio**: `models/speaker.wav` (5-15 seconds of your voice)
+-   **Device**: CUDA (GPU) preferred, CPU fallback
+-   **First Run**: Auto-downloads ~1.5GB model
+
+#### Piper (Fallback)
+-   **Why Piper?**: Fast, CPU-friendly, instant startup
+-   **Voice**: Indian Accent model (`te_IN` - Telugu) for English
+-   **Audio Output**: Streams raw PCM audio to `aplay`
 
 ### 🔀 The Router
 **File**: `core/router.py`
@@ -87,11 +100,37 @@ If a regex matches, the action is executed instantly (<10ms). If not, the query 
 
 ## 4. Configuration Guide
 
+### Requirements
+| Requirement | Value |
+| :--- | :--- |
+| **Python** | 3.11.x (via pyenv) |
+| **RAM** | 8GB+ (16GB recommended) |
+| **GPU** | RTX 30+ (optional, speeds up TTS) |
+| **Storage** | 15GB+ |
+
+### Setting Up Python 3.11
+```bash
+# Install pyenv
+yay -S pyenv
+
+# Install Python 3.11
+pyenv install 3.11.11
+
+# Create venv
+~/.pyenv/versions/3.11.11/bin/python -m venv venv
+./venv/bin/pip install -r requirements.txt
+```
+
+### Voice Cloning Setup
+1. Record a **5-15 second WAV file** of your voice
+2. Save it to `A1/models/speaker.wav`
+3. A1 will automatically use XTTS v2 for English speech
+
 ### Adding Support for Another Language
 To add Hindi or Malayalam support:
 1.  **Update `adaptive_asr.py`**: Add language-specific examples to the `system_context` string.
 2.  **Update `router.py`**: Add regex patterns for the new language's grammar (e.g., `(.*) kholo` for Hindi).
-3.  **Update `speak.py`**: Download a compatible Piper voice model (`hi_IN`, etc.) and update `MODEL_PATH`.
+3.  **Update `speak.py`**: Download a compatible Piper voice model (`hi_IN`, etc.) and update `VOICES` dict.
 
 ### Enrolling Your Voice
 To make A1 recognize YOU specifically:
@@ -109,9 +148,13 @@ The memory system is automatic. However, you can manually inspect memories by op
 
 ## 5. Troubleshooting
 
+**Issue: "XTTS/TTS not loading"**
+-   Ensure Python 3.11 is being used: `./venv/bin/python --version`
+-   Verify TTS is installed: `./venv/bin/python -c "from TTS.api import TTS; print('OK')"`
+
 **Issue: "Piper/Model not found"**
 -   Ensure you have the Piper binary in `A1/piper/piper`.
--   Ensure `voice_te.onnx` and `voice_te.onnx.json` exist in `A1/piper/`.
+-   Ensure `voice.onnx` and `voice_te.onnx` exist in `A1/piper/`.
 
 **Issue: "Ollama Connection Refused"**
 -   Make sure Ollama is running: `ollama serve`.
@@ -120,3 +163,14 @@ The memory system is automatic. However, you can manually inspect memories by op
 **Issue: "Microphone Input Empty"**
 -   Arch Linux Audio (PipeWire/PulseAudio) can be tricky.
 -   Install `pavucontrol` and check if the recording tab shows the "python" process moving the VU meter.
+
+---
+
+## 6. Version History
+
+| Version | Date | Features |
+| :--- | :--- | :--- |
+| **v1.3.0** | Jan 2026 | XTTS v2 Voice Cloning, Python 3.11 |
+| **v1.2.0** | Jan 2026 | Multilingual (Tanglish), Piper TTS |
+| **v1.1.0** | Jan 2026 | Vision, Adaptive Hearing, Speaker ID |
+| **v1.0.0** | Jan 2026 | ReAct Loop, System Control |
