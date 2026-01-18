@@ -11,7 +11,6 @@ piper/*.json
 
 # Tauri
 gui-overlay/target/
-gui-overlay/src-tauri/icons/
 
 # Obsidian
 docs/.obsidian/workspace.json
