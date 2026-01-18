@@ -43,9 +43,20 @@ def build_app_cache():
                 continue
                 
     # Add manual aliases
+    # Manual Aliases
     APP_CACHE["code"] = "code"
     APP_CACHE["vscode"] = "code"
-    APP_CACHE["terminal"] = "gnome-terminal"
+    APP_CACHE["browser"] = "firefox"
+
+    # Terminal Detection
+    terminals = ["alacritty", "kitty", "konsole", "gnome-terminal", "xfce4-terminal", "terminator"]
+    for term in terminals:
+        if subprocess.call(["which", term], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0:
+            APP_CACHE["terminal"] = term
+            break
+    
+    if "terminal" not in APP_CACHE:
+        APP_CACHE["terminal"] = "xterm" # Ultimate fallback
 
 def find_best_match(app_name):
     """Finds the closest matching app name."""

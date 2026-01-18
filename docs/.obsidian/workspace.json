@@ -4,21 +4,19 @@
     "type": "split",
     "children": [
       {
-        "id": "03d0bd053a5963c2",
+        "id": "e4325dd3989ebb48",
         "type": "tabs",
         "children": [
           {
-            "id": "bd1d3e9007cd2dde",
+            "id": "4057ebed68de491e",
             "type": "leaf",
             "state": {
-              "type": "markdown",
+              "type": "excalidraw",
               "state": {
-                "file": "Daily_Logs/00_Template.md",
-                "mode": "source",
-                "source": false
+                "file": "Excalidraw/Drawing 2026-01-18 09.48.56.excalidraw.md"
               },
-              "icon": "lucide-file",
-              "title": "00_Template"
+              "icon": "excalidraw-icon",
+              "title": "Drawing 2026-01-18 09.48.56.excalidraw"
             }
           }
         ]
@@ -72,6 +70,22 @@
               "state": {},
               "icon": "lucide-bookmark",
               "title": "Bookmarks"
+            }
+          }
+        ]
+      },
+      {
+        "id": "a7bddf3aea64dca0",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "c64bb7918b738096",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
             }
           }
         ]
@@ -164,13 +178,33 @@
               "icon": "lucide-list",
               "title": "Outline of 00_Template"
             }
+          },
+          {
+            "id": "81e59bc5a3ecebfd",
+            "type": "leaf",
+            "state": {
+              "type": "github-issue-controls-view",
+              "state": {},
+              "icon": "github",
+              "title": "Github Issue Controls"
+            }
+          },
+          {
+            "id": "b4005d752b4f0501",
+            "type": "leaf",
+            "state": {
+              "type": "git-view",
+              "state": {},
+              "icon": "git-pull-request",
+              "title": "Source Control"
+            }
           }
-        ]
+        ],
+        "currentTab": 6
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -180,16 +214,36 @@
       "daily-notes:Open today's daily note": false,
       "templates:Insert template": false,
       "command-palette:Open command palette": false,
-      "bases:Create new base": false
+      "bases:Create new base": false,
+      "obsidian-excalidraw-plugin:New drawing": false,
+      "table-editor-obsidian:Advanced Tables Toolbar": false,
+      "githobs:Manage a github issue": false,
+      "obsidian-git:Open Git source control": false,
+      "omnisearch:Omnisearch": false
     }
   },
-  "active": "bd1d3e9007cd2dde",
+  "active": "4057ebed68de491e",
   "lastOpenFiles": [
-    "Guides/Obsidian_Setup.md.md",
-    "Guides",
-    "Daily_Logs/2026-01-18.md",
-    "Configuration/Voice_Enrollment.md.md",
+    "Design/Threat_Model.md.md",
+    "Design/Design_Decisions.md.md",
+    "Roadmap/Roadmap.md.md",
+    "Roadmap/Roadmap.md",
+    "Operations/Runbook.md.md",
     "Daily_Logs/00_Template.md",
+    "Core/Core_Brain_LLM.md",
+    "Daily_Logs/2026-01-18.md",
+    "Untitled.base",
+    "00_Index.md.md",
+    "Configuration/Voice_Enrollment.md.md",
+    "Core/Core_Adaptive_ASR.md.md",
+    "Guides/Obsidian_Setup.md.md",
+    "00_Index.md",
+    "System/Architecture_ReAct_Loop.md.md",
+    "Excalidraw/Drawing 2026-01-18 09.48.56.excalidraw.md",
+    "Excalidraw",
+    "Core/Core_Memory.md.md",
+    "Core/Core_Brain_LLM.md.md",
+    "Guides",
     "Daily_Logs"
   ]
 }

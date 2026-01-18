@@ -9,10 +9,10 @@ from colorama import Fore, Style
 
 # Configuration
 MEMORY_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "memory_db")
-COLLECTION_NAME = "a1_memories"
-EMBEDDING_MODEL = "all-minilm"
+COLLECTION_NAME = "a1_memories_v2" # Bump version to recreate with correct dims
+EMBEDDING_MODEL = "nomic-embed-text" # Switch to 768d model
 OLLAMA_API_URL = "http://localhost:11434/api/embeddings"
-VECTOR_SIZE = 384  # MiniLM is 384d
+VECTOR_SIZE = 768  # nomic-embed-text is 768d
 
 class MemorySystem:
     def __init__(self):
@@ -30,7 +30,7 @@ class MemorySystem:
             exists = any(c.name == COLLECTION_NAME for c in collections)
             
             if not exists:
-                print(f"{Fore.YELLOW}[MEMORY] Creating new collection '{COLLECTION_NAME}'...{Style.RESET_ALL}")
+                print(f"{Fore.YELLOW}[MEMORY] Creating new collection '{COLLECTION_NAME}' (768d)...{Style.RESET_ALL}")
                 self.client.create_collection(
                     collection_name=COLLECTION_NAME,
                     vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE),

@@ -8,40 +8,80 @@ import vosk
 import json
 from colorama import Fore, Style
 
+import re
+
 # --- CONFIGURATION ---
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PIPER_BIN = os.path.join(BASE_DIR, "piper", "piper")
-MODEL_PATH = os.path.join(BASE_DIR, "piper", "voice_te.onnx")
+
+# Multi-Voice Configuration
+# Multi-Voice Configuration
+# 'voice.onnx' is the original high-quality English model.
+# 'voice_te.onnx' is the Telugu model (Proxy for Tamil).
+VOICES = {
+    "en": os.path.join(BASE_DIR, "piper", "voice.onnx"),
+    "ta": os.path.join(BASE_DIR, "piper", "voice_te.onnx")
+}
+
+def detect_language(text):
+    """
+    Returns 'ta' if Tamil characters are found, else 'en'.
+    Tamil Unicode Range: 0B80–0BFF
+    """
+    if re.search(r'[\u0b80-\u0bff]', text):
+        return "ta"
+    return "en"
 
 def speak(text, vosk_model=None):
     """
     Speaks text using Piper Neural TTS (High Quality, Offline).
-    Supports 'barge-in' interruption.
-    Falls back to Piper binary which must be present in A1/piper/.
+    Automatically switches between Tamil and English models.
     """
     if not text:
         return None
 
     # Clean text
     text_clean = text.replace("*", "").replace("#", "").replace("`", "").strip()
-    print(f"{Fore.GREEN}[A1]: {text_clean}{Style.RESET_ALL}")
+    
+    # Detect Language & Select Model
+    lang = detect_language(text_clean)
+    model_path = VOICES.get(lang)
+    
+    # Fallback if specific model missing
+    if not os.path.exists(model_path):
+        print(f"{Fore.RED}[TTS] Model for {lang} not found at {model_path}. Falling back to EN.{Style.RESET_ALL}")
+        model_path = VOICES["en"]
 
-    if not os.path.exists(PIPER_BIN) or not os.path.exists(MODEL_PATH):
-        print(f"{Fore.RED}[TTS ERROR] Piper or Model not found at {PIPER_BIN}{Style.RESET_ALL}")
+    lang_code = "TAMIL" if lang == "ta" else "ENGLISH"
+    print(f"{Fore.GREEN}[A1 ({lang_code})]: {text_clean}{Style.RESET_ALL}")
+
+    if not os.path.exists(PIPER_BIN) or not os.path.exists(model_path):
+        print(f"{Fore.RED}[TTS ERROR] Piper or Model not found.{Style.RESET_ALL}")
         return None
 
     # Pipeline: echo "text" | piper ... | aplay ...
     # We use aplay for raw PCM streaming (low latency)
     
     # 22050Hz is standard for 'medium' quality models in Piper
-    # Ensure aplay is installed (usually is on Linux)
     aplay_cmd = ["aplay", "-r", "22050", "-f", "S16_LE", "-t", "raw", "-q"]
-    piper_cmd = [PIPER_BIN, "--model", MODEL_PATH, "--output_raw"]
+    
+    # Piper Command
+    # Note: Tamil model might need slower speed, English faster.
+    # We tweak length_scale slightly per language.
+    speed = "1.2" if lang == "ta" else "1.0" 
+    
+    pipeline_cmd = [
+        PIPER_BIN, 
+        "--model", model_path, 
+        "--output_raw", 
+        "--length_scale", speed,
+        "--sentence_silence", "0.2"
+    ]
     
     try:
         # Start the pipeline
         p_echo = subprocess.Popen(["echo", text_clean], stdout=subprocess.PIPE)
-        p_piper = subprocess.Popen(piper_cmd, stdin=p_echo.stdout, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        p_piper = subprocess.Popen(pipeline_cmd, stdin=p_echo.stdout, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         if p_echo.stdout:
             p_echo.stdout.close() 
         

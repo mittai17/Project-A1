@@ -54,12 +54,25 @@ def route_query(text):
     
     # --- 1. Regex Fast-Path (0 Latency) ---
     
-    # App Control (Open/Close) - English (Prefix)
-    match = re.search(r"^(open|close) (.+)", text_lower)
+    # Clean noise (repetition, politeness)
+    # Remove duplicates like "open terminal open terminal" -> "open terminal"
+    # Simple de-duplication of the whole string space-wise? No, risky. 
+    # Just fix the specific case of repeated command phrase.
+    if "open terminal" in text_lower and text_lower.count("open terminal") > 1:
+        text_lower = "open terminal"
+    
+    match = re.search(r"^(?:please )?(open|close) (.+)", text_lower)
     if match:
-         app = match.group(2).replace(".", "").strip()
-         action = "app_open" if match.group(1) == "open" else "app_close"
-         return {"intent": action, "args": app}
+         action_word = match.group(1)
+         raw_app = match.group(2)
+         
+         # Cleanup arg: remove repeated action words at the end
+         # e.g., "terminal open terminal" -> "terminal"
+         raw_app = raw_app.replace(f"open {raw_app}", "").replace(action_word, "").strip()
+         raw_app = raw_app.replace(".", "").strip()
+
+         action = "app_open" if action_word == "open" else "app_close"
+         return {"intent": action, "args": raw_app}
 
     # App Control (Open/Close) - Tanglish/Suffix (e.g., "Firefox open pannu", "Firefox open")
     match_suffix = re.search(r"^(.+) (open|close)( pannu| seiyu| karo)?$", text_lower)

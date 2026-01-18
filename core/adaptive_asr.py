@@ -23,7 +23,8 @@ class AdaptiveEar:
         print(f"{Fore.YELLOW}[ADAPTIVE] Loading Whisper '{model_size}' + Speaker Encoder...{Style.RESET_ALL}")
         
         # Load Whisper
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        # Load Whisper (Force CPU to save VRAM for Llama 3.1)
+        device = "cpu"
         self.asr_model = whisper.load_model(model_size, device=device)
         
         # Load Speaker Encoder
@@ -56,13 +57,13 @@ class AdaptiveEar:
                 print(f"{Fore.RED}[ADAPTIVE] Failed to load profile: {e}{Style.RESET_ALL}")
         return None
 
-    def listen(self, timeout=8):
+    def listen(self, timeout=10):
         """
         Record and Transcribe with Speaker Adaptation.
         """
         SAMPLE_RATE = 16000
-        THRESHOLD = 500
-        SILENCE_LIMIT = 2.0
+        THRESHOLD = 300  # More sensitive mic
+        SILENCE_LIMIT = 2.5 # Wait longer for user to finish thought
         
         print(f"{Fore.BLUE}[ADAPTIVE] Listening...{Style.RESET_ALL}")
         
@@ -121,21 +122,15 @@ class AdaptiveEar:
                     self._update_profile(current_emb)
 
         # 2. Transcribe with Bias
-        # Prompt engineering for Tanglish/Tamil
-        system_context = (
-            "A1 system commands. Linux Arch. Mixed Tamil English. Tanglish. "
-            "Keywords: open firefox, google chrome, vs code, terminal, alacritty, kitty, "
-            "hyprland, wayland, update system, pacman, yay, install, search weather, news, "
-            "python, code, script, github, clone, push, pull. "
-            "Examples: 'Firefox open pannu', 'Weather yeppadi irukku', 'System update sei', 'Time enna'."
-        )
+        # Simplified prompt: Focus on VOCABULARY, not instructions.
+        tanglish_vocab = "A1, pannu, seiyu, enna, irukku, open, close, update, system, terminal, firefox, code, install, weather, news."
         
         if user_identified:
-            print(f"{Fore.GREEN}[ADAPTIVE] User Verified. Context: Code-Switching.{Style.RESET_ALL}")
-            prompt = f"User speaking. Tamil/English code-switching. High accuracy. Context: {system_context}"
+            print(f"{Fore.GREEN}[ADAPTIVE] Verified. Using Tanglish bias.{Style.RESET_ALL}")
+            prompt = f"Conversational Tamil English. Tanglish. Vocab: {tanglish_vocab}"
         else:
             print(f"{Fore.YELLOW}[ADAPTIVE] Standard Mode.{Style.RESET_ALL}")
-            prompt = system_context
+            prompt = f"English. Vocab: {tanglish_vocab}"
 
         try:
             result = self.asr_model.transcribe(temp_file, fp16=False, initial_prompt=prompt)
