@@ -56,7 +56,11 @@ chmod +x setup.sh
 # Edit .env to add OPENROUTER_API_KEY for Vision support.
 nano .env
 
-# 4. Enroll Your Voice (Recommended)
+# 4. Pull Needed Models
+ollama pull llama3.1:8b
+ollama pull all-minilm
+
+# 5. Enroll Your Voice (Recommended)
 # Records samples to learn your voice for higher accuracy.
 ./venv/bin/python core/voice_enroll.py
 ```
@@ -126,9 +130,9 @@ graph TD
 ## 🔧 Technical Details
 
 <details>
-<summary><strong>🧠 Brain (Llama 3.2)</strong></summary>
+<summary><strong>🧠 Brain (Llama 3.1)</strong></summary>
 
-- **Model:** `llama3.2:3b` (Quantized 4-bit) for general chat.
+- **Model:** `llama3.1:8b` (Quantized 4-bit) for general chat.
 - **Inference:** Ollama API.
 - **Agentic Loop:** Implements ReAct pattern for tool usage.
 </details>
@@ -145,7 +149,7 @@ graph TD
 <summary><strong>🗣️ Ears (Adaptive ASR)</strong></summary>
 
 - **Wake Word:** Vosk Small (Low Power).
-- **Transcription:** OpenAI Whisper `base.en` (High Accuracy).
+- **Transcription:** OpenAI Whisper `small` (Prompted for Multilingual).
 - **Identity:** SpeechBrain `ECAPA-TDNN` (Speaker Verification).
 - **Adaptation:** Learns user voice profile over time.
 </details>
@@ -153,16 +157,16 @@ graph TD
 <details>
 <summary><strong>🔊 Mouth (TTS)</strong></summary>
 
-- **Engine:** `espeak-ng` + `pyttsx3`.
-- **Latency:** <200ms (Instant).
-- **Features:** Interruption handling.
+- **Engine:** `Piper Neural TTS` (Offline).
+- **Voice:** Indian Accent (Telugu `te_IN` model proxy).
+- **Latency:** Low-latency stream via `aplay`.
 </details>
 
 <details>
 <summary><strong>💾 Memory (Qdrant)</strong></summary>
 
 - **Type:** Vector Database.
-- **Embedding:** `nomic-embed-text`.
+- **Embedding:** `all-minilm` (via Ollama).
 - **Usage:** Semantic search for relevant context.
 </details>
 

@@ -16,7 +16,7 @@ from core.speaker_embed import SpeakerEncoder
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "voice_config.json")
 
 class AdaptiveEar:
-    def __init__(self, model_size="base.en"):
+    def __init__(self, model_size="small"):
         self.config = self._load_config()
         self.model_size = model_size
         
@@ -121,19 +121,20 @@ class AdaptiveEar:
                     self._update_profile(current_emb)
 
         # 2. Transcribe with Bias
-        # Prompt engineering based on ID
-        system_context = "A1 system commands. Linux Arch. Keywords: open firefox, google chrome, vs code, terminal, alacritty, kitty, hyprland, wayland, update system, pacman, yay, install, search weather, news, python, code, script, github, clone, push, pull."
+        # Prompt engineering for Tanglish/Tamil
+        system_context = (
+            "A1 system commands. Linux Arch. Mixed Tamil English. Tanglish. "
+            "Keywords: open firefox, google chrome, vs code, terminal, alacritty, kitty, "
+            "hyprland, wayland, update system, pacman, yay, install, search weather, news, "
+            "python, code, script, github, clone, push, pull. "
+            "Examples: 'Firefox open pannu', 'Weather yeppadi irukku', 'System update sei', 'Time enna'."
+        )
         
         if user_identified:
-            # High confidence: Use strong bias and perhaps "My Voice" specific tweaks if we had them.
-            # We assume the default context IS the user's context.
-            print(f"{Fore.GREEN}[ADAPTIVE] User Verified. Applying personalization.{Style.RESET_ALL}")
-            prompt = f"User speaking. High accuracy required. Context: {system_context}"
+            print(f"{Fore.GREEN}[ADAPTIVE] User Verified. Context: Code-Switching.{Style.RESET_ALL}")
+            prompt = f"User speaking. Tamil/English code-switching. High accuracy. Context: {system_context}"
         else:
-            # Low confidence: maybe background noise or someone else. 
-            # Use minimal context to avoid hallucinating commands.
-            # OR, if "Not for blocking", we still try validation but maybe with less aggression.
-            print(f"{Fore.YELLOW}[ADAPTIVE] Unverified speaker. Using standard mode.{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}[ADAPTIVE] Standard Mode.{Style.RESET_ALL}")
             prompt = system_context
 
         try:

@@ -17,23 +17,24 @@ The core logic is split into single-responsibility modules:
   - **Purpose**: Main hearing module with speaker identification.
   - **Key Classes**: `AdaptiveEar`
   - **Logic**: 
-    - **Transcription**: Uses **OpenAI Whisper** (base.en) for high-accuracy speech-to-text.
+    - **Transcription**: Uses **OpenAI Whisper** (small) with specific prompting to support **English/Tamil/Tanglish**.
     - **Identification**: Uses **SpeechBrain** (ECAPA-TDNN) to generate embeddings from audio and compare them against `user_profile.npy`.
     - **Result**: Returns text annotated with `[VERIFIED USER]` if the voice matches.
 
 - **`router.py`**
   - **Purpose**: Intent classification and query routing.
-  - **Logic**: Hybrid approach.
-    1.  **Regex Fast-Path**: Instantly catches simple commands like "Open Firefox", "Look at screen".
-    2.  **AI Router**: Uses a tiny, ultra-fast local LLM (`qwen2.5:0.5b`) to classify ambiguous queries into categories: `search`, `code`, `vision`, `system`, or `chat`.
+  - **Logic**: **Rule-based**.
+    - **Regex Fast-Path**: Instantly catches commands like "Open Firefox", "Look at screen", "Search", "Install".
+    - **Tanglish Support**: Handles suffix-based commands (e.g., "Firefox open pannu", "Terminal close seiyu").
+    - **Fallback**: Defaults to conversation mode if no rule matches.
 
 - **`brain.py`**
   - **Purpose**: The intelligent core (Agentic).
   - **Architecture**: **ReAct Loop** (Reason + Act).
   - **Logic**: 
-    - **Model Tiers**: Routes queries to **Local** (Llama 3.2), **Bytez** (Coding), or **OpenRouter** (Vision/Complex).
+    - **Model**: **LLaMA 3.1 8B** (via Ollama).
     - **Context**: Maintains conversation history and retrieves relevant memories from Qdrant.
-    - **Tool Use**: Can dynamically call tools via the **Model Context Protocol (MCP)** if the LLM decides they are needed (e.g., specific GitHub searches).
+    - **Tool Use**: Can dynamically call tools via the **Model Context Protocol (MCP)**.
 
 - **`vision.py`**
   - **Purpose**: Visual understanding.
@@ -49,11 +50,13 @@ The core logic is split into single-responsibility modules:
 
 - **`memory.py`**
   - **Purpose**: Long-term memory.
-  - **Logic**: Embeds text using `nomic-embed-text` and stores vectors in a local **Qdrant** instance. Allows semantic retrieval of facts.
+  - **Logic**: Embeds text using **MiniLM** (via Ollama) and stores vectors in a local **Qdrant** instance. Allows semantic retrieval of facts.
 
 - **`speak.py`**
   - **Purpose**: Audio output (TTS).
-  - **Logic**: Wraps `pyttsx3` / `espeak-ng`. Configured for low-latency feedback.
+  - **Logic**: Uses **Piper Neural TTS** (Local Binary).
+  - **Configuration**: Defaults to **Indian Accent** (Telugu `te_IN` model) as a proxy for Tamil/Indian English.
+
 
 ### Root Files
 - **`main.py`**: State machine orchestrator (Sleeping -> Listening -> Routing -> Thinking/Acting -> Speaking).

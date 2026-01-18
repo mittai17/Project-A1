@@ -6,3 +6,5 @@ models/
 memory_db/
 .DS_Store
 *.wav
+piper/*.onnx
+piper/*.json

@@ -14,7 +14,7 @@ load_dotenv()
 
 OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY")
 BYTEZ_KEY = os.getenv("BYTEZ_API_KEY")
-LOCAL_MODEL = "llama3.2:3b"
+LOCAL_MODEL = "llama3.1:8b"
 ROUTER_MODEL = "qwen2.5:0.5b" # Ultra-fast routing model
 API_URL = "http://localhost:11434/api/generate"
 
@@ -62,26 +62,26 @@ USER INPUT
 
 OUTPUT"""
 
-    try:
-        req = {
-            "model": ROUTER_MODEL,
-            "prompt": router_prompt,
-            "stream": False,
-            "options": {
-                "temperature": 0.0,
-                "num_predict": 5,
-                "num_ctx": 256,
-                "top_p": 1,
-            }
-        }
-        res = requests.post(API_URL, json=req, timeout=2)
-        if res.status_code == 200:
-            result = res.json()['response'].strip().lower()
-            if "openrouter" in result: return "openrouter"
-            if "bytez" in result: return "bytez"
-            if "local" in result: return "local"
-    except:
-        pass
+    # try:
+    #     req = {
+    #         "model": ROUTER_MODEL,
+    #         "prompt": router_prompt,
+    #         "stream": False,
+    #         "options": {
+    #             "temperature": 0.0,
+    #             "num_predict": 5,
+    #             "num_ctx": 256,
+    #             "top_p": 1,
+    #         }
+    #     }
+    #     res = requests.post(API_URL, json=req, timeout=2)
+    #     if res.status_code == 200:
+    #         result = res.json()['response'].strip().lower()
+    #         if "openrouter" in result: return "openrouter"
+    #         if "bytez" in result: return "bytez"
+    #         if "local" in result: return "local"
+    # except:
+    #     pass
         
     # Fallback heuristic
     p_len = len(prompt.split())

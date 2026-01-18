@@ -10,9 +10,9 @@ from colorama import Fore, Style
 # Configuration
 MEMORY_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "memory_db")
 COLLECTION_NAME = "a1_memories"
-EMBEDDING_MODEL = "nomic-embed-text"
+EMBEDDING_MODEL = "all-minilm"
 OLLAMA_API_URL = "http://localhost:11434/api/embeddings"
-VECTOR_SIZE = 768  # nomic-embed-text is 768d
+VECTOR_SIZE = 384  # MiniLM is 384d
 
 class MemorySystem:
     def __init__(self):

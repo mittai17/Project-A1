@@ -42,40 +42,9 @@ Output:"""
 
 def route_query_ai(user_input):
     """
-    Uses a small, ultra-fast LLM to route queries deterministically.
+    Disabled in favor of logic-based routing (Spec Requirement).
     """
-    try:
-        req = {
-            "model": ROUTER_MODEL,
-            "prompt": SYSTEM_PROMPT.replace("{USER_INPUT}", user_input),
-            "stream": False,
-            "options": {
-                "temperature": 0.0,
-                "num_predict": 10, # Max tokens
-                "num_ctx": 256,
-                "top_p": 1,
-            }
-        }
-        res = requests.post(API_URL, json=req, timeout=3)
-        if res.status_code == 200:
-            result = res.json()['response'].strip()
-            
-            # Simple heuristic parsing since model is deterministic
-            if '"route":"code"' in result or "'route': 'code'" in result or "route: code" in result or result == "code":
-                return "code"
-            if '"route":"search"' in result or "search" in result:
-                return "search"
-            if '"route":"vision"' in result or "vision" in result:
-                return "vision"
-            if '"route":"system"' in result or "system" in result:
-                return "system"
-            
-            # Default fallback
-            return "chat"
-            
-    except Exception as e:
-        # Fallback to regex if AI router fails (timeout/offline)
-        return None 
+    return None 
 
 def route_query(text):
     """
@@ -85,11 +54,18 @@ def route_query(text):
     
     # --- 1. Regex Fast-Path (0 Latency) ---
     
-    # App Control (Open/Close)
-    match = re.search(r"(open|close) (.+)", text_lower)
+    # App Control (Open/Close) - English (Prefix)
+    match = re.search(r"^(open|close) (.+)", text_lower)
     if match:
          app = match.group(2).replace(".", "").strip()
          action = "app_open" if match.group(1) == "open" else "app_close"
+         return {"intent": action, "args": app}
+
+    # App Control (Open/Close) - Tanglish/Suffix (e.g., "Firefox open pannu", "Firefox open")
+    match_suffix = re.search(r"^(.+) (open|close)( pannu| seiyu| karo)?$", text_lower)
+    if match_suffix:
+         app = match_suffix.group(1).replace(".", "").strip()
+         action = "app_open" if match_suffix.group(2) == "open" else "app_close"
          return {"intent": action, "args": app}
 
     # Vision
