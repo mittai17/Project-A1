@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A1 Overlay</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Main Siri-style orb container -->
+    <div id="overlay-container">
+        <!-- Outer glow ring -->
+        <div class="glow-ring"></div>
+        
+        <!-- Main orb -->
+        <div id="orb" class="orb idle">
+            <!-- Inner animated layers -->
+            <div class="orb-layer layer-1"></div>
+            <div class="orb-layer layer-2"></div>
+            <div class="orb-layer layer-3"></div>
+            
+            <!-- Waveform bars (for listening state) -->
+            <div class="waveform" id="waveform">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+            
+            <!-- Center icon -->
+            <div class="center-icon" id="center-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                </svg>
+            </div>
+        </div>
+        
+        <!-- Status text (optional, shown on hover in interactive mode) -->
+        <div class="status-text" id="status-text">A1</div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

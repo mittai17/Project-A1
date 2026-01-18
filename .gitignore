@@ -8,3 +8,16 @@ memory_db/
 *.wav
 piper/*.onnx
 piper/*.json
+
+# Tauri
+gui-overlay/target/
+gui-overlay/src-tauri/icons/
+
+# Obsidian
+docs/.obsidian/workspace.json
+docs/.obsidian/workspace-mobile.json
+docs/.smart-env/
+
+# Overlay state
+.overlay_state
+

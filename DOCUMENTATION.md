@@ -1,6 +1,6 @@
 # A1 Technical Documentation
 
-> **Version**: 1.3.0 (Voice Cloning Beta)  
+> **Version**: 1.4.0 (Siri-Style Overlay)  
 > **Date**: January 2026
 
 This documentation provides a comprehensive technical overview of the A1 Voice Assistant, detailing its modules, data flow, and configuration options.
@@ -33,6 +33,15 @@ A1/
 │   ├── vision.py          # Screen Capture & Gemini API
 │   ├── memory.py          # Qdrant Vector DB Manager
 │   └── mcp_manager.py     # Model Context Protocol Handler
+│
+├── gui-overlay/           # Siri-Style Visual Overlay (Tauri v2)
+│   ├── src-tauri/         # Rust backend
+│   │   ├── src/main.rs    # Click-through + state control
+│   │   └── tauri.conf.json# Window configuration
+│   └── dist/              # Frontend (HTML/CSS/JS)
+│       ├── index.html     # Orb structure
+│       ├── styles.css     # Animations & states
+│       └── app.js         # State polling
 │
 ├── skills/                # Action Modules
 │   ├── app_control.py     # Window Management (Hyprland/X11)
@@ -95,6 +104,55 @@ Before asking the heavy LLM, A1 checks for "Reflex" commands using Regex.
 -   **Vision**: `^look at.*`
 
 If a regex matches, the action is executed instantly (<10ms). If not, the query goes to Llama 3.1.
+
+### 🎨 GUI Overlay (Siri-Style)
+**Files**: `gui-overlay/` + `core/overlay.py`
+
+A1 features a **Siri-style visual overlay** built with **Tauri v2** (Rust + WebView). This overlay provides visual feedback without interrupting your work.
+
+#### Why It Doesn't Interrupt Your Work
+
+| Setting | Effect |
+| :--- | :--- |
+| `alwaysOnTop: true` | Stays visible above all windows |
+| `decorations: false` | No title bar or borders |
+| `transparent: true` | See-through background |
+| `focus: false` | Never steals keyboard focus |
+| `set_ignore_cursor_events(true)` | **All mouse clicks pass through** |
+
+#### Visual States
+
+| State | Color | Animation | Trigger |
+| :--- | :--- | :--- | :--- |
+| **Idle** | 🟣 Purple | Gentle pulse | Waiting for wake word |
+| **Listening** | 🟢 Green | Waveform bars | Wake word detected |
+| **Thinking** | 🟠 Orange | Spinning glow | Processing command |
+| **Speaking** | 🔵 Blue | Wave animation | TTS active |
+| **Error** | 🔴 Red | Shake | System error |
+
+#### Architecture
+
+```
+Python (main.py)                    Tauri (gui-overlay/)
+     │                                    │
+     │  overlay.listening()              │
+     ├──────────────────────►  HTTP :9877 ──► app.js polls
+     │                                    │
+     │                                    ▼
+     │                           setState("listening")
+     │                                    │
+     │                                    ▼
+     │                           CSS Animation Change
+```
+
+#### Building the Overlay
+
+```bash
+cd gui-overlay
+cargo build --release
+```
+
+The overlay binary is at `gui-overlay/target/release/a1-overlay`.
 
 ---
 
@@ -170,6 +228,7 @@ The memory system is automatic. However, you can manually inspect memories by op
 
 | Version | Date | Features |
 | :--- | :--- | :--- |
+| **v1.4.0** | Jan 2026 | Siri-Style Overlay (Tauri v2), Click-through |
 | **v1.3.0** | Jan 2026 | XTTS v2 Voice Cloning, Python 3.11 |
 | **v1.2.0** | Jan 2026 | Multilingual (Tanglish), Piper TTS |
 | **v1.1.0** | Jan 2026 | Vision, Adaptive Hearing, Speaker ID |

@@ -5,7 +5,7 @@ tags: [roadmap, future, planning]
 # 🛣️ Project Roadmap
 
 > [!ABSTRACT]
-> A1 is currently in **v1.3.0 (Beta)**. This document outlines the trajectory towards v2.0 and beyond, focusing on eliminating cloud dependencies and enhancing agentic capabilities.
+> A1 is currently in **v1.4.0 (Beta)**. This document outlines the trajectory towards v2.0 and beyond, focusing on eliminating cloud dependencies and enhancing agentic capabilities.
 
 ## 📅 Version History
 
@@ -15,7 +15,8 @@ tags: [roadmap, future, planning]
 | **v1.0** | ✅ | ReAct Loop, System Control, App Control |
 | **v1.1** | ✅ | Vision (Cloud), Adaptive Hearing (Speaker ID) |
 | **v1.2** | ✅ | Multilingual (Tanglish), Piper TTS, Llama 3.1 |
-| **v1.3** | 🚧 | **Current**: XTTS v2 Voice Cloning, Python 3.11 |
+| **v1.3** | ✅ | XTTS v2 Voice Cloning, Python 3.11 |
+| **v1.4** | 🚧 | **Current**: Siri-Style GUI Overlay (Tauri v2) |
 
 ---
 

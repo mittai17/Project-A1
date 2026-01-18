@@ -10,7 +10,7 @@ init()
 # Import core modules
 # ... imports ...
 try:
-    from core import wake, listen, listen_whisper, brain, speak, router, vision, adaptive_asr
+    from core import wake, listen, listen_whisper, brain, speak, router, vision, adaptive_asr, overlay
     from skills import app_control, web, arch, foss
 except ImportError as e:
     print(f"{Fore.RED}Error importing modules: {e}{Style.RESET_ALL}")
@@ -54,14 +54,23 @@ def main():
     print(f"{Fore.YELLOW}[SYSTEM] Initializing Adaptive AI Ear...{Style.RESET_ALL}")
     ear = adaptive_asr.AdaptiveEar()
 
-    # 4. Startup Sound
-    speak.speak("A one online. High-Accuracy Mode.")
+    # 4. Start Overlay
+    overlay.start()
+    overlay.idle()
 
-    # 4. Main Loop
+    # 5. Startup Sound
+    overlay.speaking()
+    speak.speak("A one online. High-Accuracy Mode.")
+    overlay.idle()
+
+    # 6. Main Loop
     while True:
         try:
-            # Wait for wake word (Vosk)
+            # Wait for wake word (Vosk) - Overlay stays idle
             if wake.listen_for_wake_word(vosk_model):
+                # Wake word detected! Switch to listening state
+                overlay.listening()
+                
                 # Continuous Conversation Mode
                 next_command = speak.speak("Listening.", vosk_model)
                 
@@ -73,9 +82,13 @@ def main():
                         print(f"{Fore.MAGENTA}[CHAINED COMMAND]: {command}{Style.RESET_ALL}")
                     else:
                         # Listen for command (Whisper)
+                        overlay.listening()
                         command = ear.listen(timeout=8)
                     
                     if command:
+                        # Thinking state while processing
+                        overlay.thinking()
+                        
                         # Route
                         route = router.route_query(command)
                         intent = route["intent"]
@@ -111,7 +124,9 @@ def main():
                             response = brain.think(args)
                             
                         # Speak response
+                        overlay.speaking()
                         speak.speak(response, vosk_model)
+                        overlay.idle()
                         
                         # Go back to Sleep (break inner loop) to wait for Wake Word again
                         # This prevents the system from staying open and timing out constantly
@@ -120,7 +135,9 @@ def main():
                         break
                     else:
                         print(f"{Fore.YELLOW}[SYSTEM] Timeout.{Style.RESET_ALL}")
+                        overlay.speaking()
                         speak.speak("Offline.")
+                        overlay.idle()
                         break
 
         except KeyboardInterrupt:
@@ -128,7 +145,9 @@ def main():
             break
         except Exception as e:
             print(f"{Fore.RED}[ERROR] Critical Loop Error: {e}{Style.RESET_ALL}")
+            overlay.error()
             speak.speak("System error.")
+            overlay.idle()
 
 if __name__ == "__main__":
     main()

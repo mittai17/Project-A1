@@ -21,6 +21,7 @@ The cognitive reasoning engine.
 - [[Core/Core_Adaptive_ASR.md|Hearing & STT]]
 - [[Core/Core_Router.md|Reflex Router]]
 - [[Core/Core_TTS.md|Speech Synthesis]]
+- [[Core/GUI_Overlay.md|🎨 GUI Overlay (Siri-Style)]]
 - [[Core/Core_Memory.md|Memory (Qdrant)]]
 
 ### 🔹 [[Operations/Runbook.md|Operations & User Manual]]
@@ -55,6 +56,7 @@ graph LR
         A1 --> Speaking(🗣️ Neural Speech)
         A1 --> Brain(🧠 Llama 3.1 Brain)
         A1 --> Vision(👁️ Screen Vision)
+        A1 --> Overlay(🎨 Siri Overlay)
     end
     
     subgraph "World Interaction"
@@ -77,6 +79,7 @@ graph LR
 | **LLM** | 🟢 Local | `llama3.1:8b` (Ollama) |
 | **STT** | 🟢 Local | `whisper-small` + `vosk` |
 | **TTS** | 🟢 Local | `XTTS v2` (Voice Clone) + `piper` (Fallback) |
+| **GUI Overlay** | 🟢 Local | `Tauri v2` + `Rust` |
 | **Vision** | 🟠 Cloud | `gemini-2.0-flash` |
 | **Memory** | 🟢 Local | `qdrant` + `all-minilm` |
 

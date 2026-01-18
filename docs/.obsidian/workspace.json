@@ -11,12 +11,14 @@
             "id": "4057ebed68de491e",
             "type": "leaf",
             "state": {
-              "type": "excalidraw",
+              "type": "markdown",
               "state": {
-                "file": "Excalidraw/Drawing 2026-01-18 09.48.56.excalidraw.md"
+                "file": "Configuration/Memory_System.md.md",
+                "mode": "source",
+                "source": false
               },
-              "icon": "excalidraw-icon",
-              "title": "Drawing 2026-01-18 09.48.56.excalidraw"
+              "icon": "lucide-file",
+              "title": "Memory_System.md"
             }
           }
         ]
@@ -31,6 +33,7 @@
       {
         "id": "119d5975c3b60466",
         "type": "tabs",
+        "dimension": 75.68421052631578,
         "children": [
           {
             "id": "9e87699be0eef39f",
@@ -71,12 +74,24 @@
               "icon": "lucide-bookmark",
               "title": "Bookmarks"
             }
+          },
+          {
+            "id": "d57abbc106e158ee",
+            "type": "leaf",
+            "state": {
+              "type": "file-tree-view",
+              "state": {},
+              "icon": "sheets-in-box",
+              "title": "File Tree"
+            }
           }
-        ]
+        ],
+        "currentTab": 3
       },
       {
         "id": "a7bddf3aea64dca0",
         "type": "tabs",
+        "dimension": 24.31578947368421,
         "children": [
           {
             "id": "c64bb7918b738096",
@@ -198,9 +213,29 @@
               "icon": "git-pull-request",
               "title": "Source Control"
             }
+          },
+          {
+            "id": "dce0d49b792cd8de",
+            "type": "leaf",
+            "state": {
+              "type": "smart-connections-view",
+              "state": {},
+              "icon": "smart-connections",
+              "title": "Connections"
+            }
+          },
+          {
+            "id": "5ba52d85a7543bde",
+            "type": "leaf",
+            "state": {
+              "type": "smart-lookup-view",
+              "state": {},
+              "icon": "smart-lookup",
+              "title": "Lookup"
+            }
           }
         ],
-        "currentTab": 6
+        "currentTab": 8
       }
     ],
     "direction": "horizontal",
@@ -219,27 +254,36 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false,
       "githobs:Manage a github issue": false,
       "obsidian-git:Open Git source control": false,
-      "omnisearch:Omnisearch": false
+      "omnisearch:Omnisearch": false,
+      "file-tree-alternative:File Tree Alternative Plugin": false,
+      "smart-connections:Smart Lookup: Open lookup view": false,
+      "smart-connections:Smart Connections: Open random connection": false,
+      "smart-connections:Smart Connections: Open connections view": false
     }
   },
   "active": "4057ebed68de491e",
   "lastOpenFiles": [
-    "Design/Threat_Model.md.md",
-    "Design/Design_Decisions.md.md",
-    "Roadmap/Roadmap.md.md",
-    "Roadmap/Roadmap.md",
-    "Operations/Runbook.md.md",
-    "Daily_Logs/00_Template.md",
-    "Core/Core_Brain_LLM.md",
+    "System/Architecture_ReAct_Loop.md.md",
     "Daily_Logs/2026-01-18.md",
     "Untitled.base",
+    "Daily_Logs/00_Template.md",
     "00_Index.md.md",
     "Configuration/Voice_Enrollment.md.md",
+    "Configuration/Memory_System.md.md",
+    "Operations/Troubleshooting.md.md",
+    "00_Index.md",
+    "Skills/Skill_Web_Search.md.md",
+    "Skills/Skill_Arch_Linux.md.md",
+    "Roadmap/Roadmap.md.md",
+    "Excalidraw/Drawing 2026-01-18 09.48.56.excalidraw.md",
+    "XTTS_Setup.md",
+    "Design/Threat_Model.md.md",
+    "Design/Design_Decisions.md.md",
+    "Roadmap/Roadmap.md",
+    "Operations/Runbook.md.md",
+    "Core/Core_Brain_LLM.md",
     "Core/Core_Adaptive_ASR.md.md",
     "Guides/Obsidian_Setup.md.md",
-    "00_Index.md",
-    "System/Architecture_ReAct_Loop.md.md",
-    "Excalidraw/Drawing 2026-01-18 09.48.56.excalidraw.md",
     "Excalidraw",
     "Core/Core_Memory.md.md",
     "Core/Core_Brain_LLM.md.md",

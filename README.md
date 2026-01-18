@@ -43,6 +43,17 @@ A1 doesn't just translate; it understands **Code-Switching**.
 - **Ears**: Adaptive Whisper (Small) model that learns your voice signature (`SpeechBrain`).
 - **Mouth**: **Piper Neural TTS** providing a high-quality Indian accent (Telugu/Tamil proxy) with low latency.
 
+### 🎨 Siri-Style Visual Overlay (NEW!)
+- **Tauri v2** native overlay that behaves like Apple Siri
+- **Always visible** but **never interrupts** your work
+- **Click-through** - mouse clicks pass through to apps behind
+- **Non-focusable** - keyboard always goes to your active app
+- **Visual States**:
+  - 🟣 **Purple** (Idle) - Waiting for wake word
+  - 🟢 **Green** (Listening) - Waveform animation
+  - 🟠 **Orange** (Thinking) - Processing your request
+  - 🔵 **Blue** (Speaking) - Responding to you
+
 ---
 
 ## 🛠️ Technology Stack
@@ -55,6 +66,7 @@ A1 doesn't just translate; it understands **Code-Switching**.
 | **TTS (Speaking)** | `Piper Neural TTS` | Offline, high-quality speech synthesis. |
 | **Vector DB** | `Qdrant` + `All-MiniLM` | Long-term memory storage. |
 | **Vision** | `Gemini 2.0 Flash` | Screenshot analysis (Cloud). |
+| **GUI Overlay** | `Tauri v2` + `Rust` | Siri-style non-intrusive visual feedback. |
 | **Router** | `Regex` + `Python` | Deterministic intent routing. |
 
 ---
