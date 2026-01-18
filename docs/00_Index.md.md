@@ -28,6 +28,7 @@ Daily usage, voice commands, and maintenance.
 - [[Operations/Installation.md|Installation Guide]]
 - [[Operations/Troubleshooting.md|Troubleshooting]]
 - [[Guides/Obsidian_Setup.md|Obsidian Plugin Guide]]
+- [[Guides/XTTS_Setup|🎙️ XTTS Voice Cloning Setup]]
 
 ### 🔹 Daily Logs
 > [!NOTE] Dynamic List
@@ -75,7 +76,7 @@ graph LR
 | :--- | :--- | :--- |
 | **LLM** | 🟢 Local | `llama3.1:8b` (Ollama) |
 | **STT** | 🟢 Local | `whisper-small` + `vosk` |
-| **TTS** | 🟢 Local | `piper` (Indian Accent) |
+| **TTS** | 🟢 Local | `XTTS v2` (Voice Clone) + `piper` (Fallback) |
 | **Vision** | 🟠 Cloud | `gemini-2.0-flash` |
 | **Memory** | 🟢 Local | `qdrant` + `all-minilm` |
 

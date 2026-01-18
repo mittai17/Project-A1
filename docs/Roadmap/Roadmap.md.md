@@ -5,7 +5,7 @@ tags: [roadmap, future, planning]
 # 🛣️ Project Roadmap
 
 > [!ABSTRACT]
-> A1 is currently in **v1.2.0 (Beta)**. This document outlines the trajectory towards v2.0 and beyond, focusing on eliminating cloud dependencies and enhancing agentic capabilities.
+> A1 is currently in **v1.3.0 (Beta)**. This document outlines the trajectory towards v2.0 and beyond, focusing on eliminating cloud dependencies and enhancing agentic capabilities.
 
 ## 📅 Version History
 
@@ -14,7 +14,8 @@ tags: [roadmap, future, planning]
 | **v0.1** | ✅ | Basic Vosk Wake Word + Llama 3.2 Chat |
 | **v1.0** | ✅ | ReAct Loop, System Control, App Control |
 | **v1.1** | ✅ | Vision (Cloud), Adaptive Hearing (Speaker ID) |
-| **v1.2** | 🚧 | **Current**: Multilingual (Tanglish), Piper TTS, Llama 3.1 |
+| **v1.2** | ✅ | Multilingual (Tanglish), Piper TTS, Llama 3.1 |
+| **v1.3** | 🚧 | **Current**: XTTS v2 Voice Cloning, Python 3.11 |
 
 ---
 
@@ -38,6 +39,7 @@ tags: [roadmap, future, planning]
 
 **Goal**: Indistinguishable from human interaction.
 
+- [x] **Voice Cloning**: XTTS v2 for personalized voice synthesis ✅
 - [ ] **Emotional TTS**: Integrate `StyleTTS2` for expressive speech (Happy, Sad, Urgent).
 - [ ] **Full Duplex Audio**: Real-time interruption without explicit "Stop" commands (Echo cancellation).
 - [ ] **Indian Language Finetuning**: Train a LoRA adapter for Llama 3 to speak/write native Tamil script.

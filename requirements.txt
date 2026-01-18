@@ -17,3 +17,6 @@ openai-whisper>=20231117
 speechbrain>=1.0.0
 torchaudio>=2.0.0
 
+# XTTS v2 Voice Cloning (Requires Python 3.9-3.11)
+TTS>=0.22.0
+soundfile>=0.12.0
