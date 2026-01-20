@@ -1,0 +1,13 @@
+{
+    "identifier": "default",
+    "description": "Default capabilities for A1 Overlay",
+    "windows": [
+        "main"
+    ],
+    "permissions": [
+        "core:default",
+        "core:window:allow-start-dragging",
+        "core:window:allow-set-ignore-cursor-events",
+        "shell:allow-open"
+    ]
+}
