@@ -27,6 +27,18 @@ def listen_for_wake_word(model, input_device_index=None):
         while True:
             data, overflowed = stream.read(BLOCK_SIZE)
             
+            # --- CHECK GUI INPUT ---
+            if os.path.exists("gui_input.txt"):
+                 try:
+                     with open("gui_input.txt", "r") as f:
+                         gui_text = f.read().strip()
+                     os.remove("gui_input.txt")
+                     if gui_text:
+                         sys.stdout.write("\r" + " " * 80 + "\r")
+                         print(f"{Fore.GREEN}[GUI INPUT]: {gui_text}{Style.RESET_ALL}")
+                         return gui_text # Return text directly
+                 except: pass
+
             # --- VU METER & DEBUG ---
             audio_data = np.frombuffer(data, dtype=np.int16)
             volume = np.linalg.norm(audio_data) / len(audio_data)

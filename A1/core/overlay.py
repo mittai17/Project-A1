@@ -25,26 +25,49 @@ OVERLAY_BINARY = BASE_DIR / "gui-overlay" / "target" / "release" / "a1-overlay"
 
 # HTTP Server for state communication
 STATE_PORT = 9877
-current_state = "idle"
+current_data = {
+    "state": "idle",
+    "user_text": "",
+    "ai_text": ""
+}
 
 class StateHandler(http.server.BaseHTTPRequestHandler):
-    """Simple HTTP handler that returns the current overlay state"""
+    """Simple HTTP handler that returns the current overlay state as JSON"""
     
     def log_message(self, format, *args):
         pass  # Suppress logging
     
     def do_GET(self):
-        global current_state
+        global current_data
+        import json
         self.send_response(200)
-        self.send_header('Content-type', 'text/plain')
+        self.send_header('Content-type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')  # CORS
         self.end_headers()
-        self.wfile.write(current_state.encode())
+        self.wfile.write(json.dumps(current_data).encode())
     
+    def do_POST(self):
+        """Handle incoming text input from GUI"""
+        try:
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length).decode('utf-8')
+            
+            # Here we need to inject this text into the main loop.
+            # Writing to a temporary file or using a shared queue is easiest for now.
+            with open("gui_input.txt", "w") as f:
+                f.write(post_data)
+                
+            self.send_response(200)
+            self.end_headers()
+        except Exception as e:
+            self.send_response(500)
+            self.end_headers()
+
     def do_OPTIONS(self):
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
 
 class OverlayController:
@@ -118,31 +141,32 @@ class OverlayController:
     def set_state(self, state: str):
         """
         Set the overlay visual state.
-        Updates the global state variable that the HTTP server returns.
-        
         States: idle, listening, thinking, speaking, error
         """
-        global current_state
-        current_state = state
+        global current_data
+        current_data["state"] = state
+    
+    def update_captions(self, user_text=None, ai_text=None):
+        """Updates the caption text."""
+        global current_data
+        if user_text is not None:
+            current_data["user_text"] = user_text
+        if ai_text is not None:
+            current_data["ai_text"] = ai_text
     
     def idle(self):
-        """Set to idle state (purple, gentle pulse)"""
         self.set_state("idle")
         
     def listening(self):
-        """Set to listening state (green, waveform)"""
         self.set_state("listening")
         
     def thinking(self):
-        """Set to thinking state (orange, spinning)"""
         self.set_state("thinking")
         
     def speaking(self):
-        """Set to speaking state (blue, wave)"""
         self.set_state("speaking")
         
     def error(self):
-        """Set to error state (red, shake)"""
         self.set_state("error")
     
     def __del__(self):

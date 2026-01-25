@@ -1,12 +1,24 @@
 {
-  "github-mcp": {
+  "filesystem": {
     "command": "npx",
     "args": [
       "-y",
-      "@modelcontextprotocol/server-github"
-    ],
-    "env": {
-      "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_TOKEN_HERE"
-    }
+      "@modelcontextprotocol/server-filesystem",
+      "/home/mittai/Documents/vs-code/Project-a1/A1"
+    ]
+  },
+  "git": {
+    "command": "npx",
+    "args": [
+      "-y",
+      "@modelcontextprotocol/server-git",
+      "/home/mittai/Documents/vs-code/Project-a1"
+    ]
+  },
+  "a1-local": {
+    "command": "/home/mittai/Documents/vs-code/Project-a1/A1/venv/bin/python",
+    "args": [
+      "/home/mittai/Documents/vs-code/Project-a1/A1/mcp_server_local.py"
+    ]
   }
 }

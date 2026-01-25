@@ -335,13 +335,45 @@ def route_query(text):
     if "sentry mode" in text_lower or "security protocol" in text_lower or "lock down" in text_lower:
         return {"intent": "sentry_mode", "args": ""}
 
-    # --- YOUTUBE ---
+    # --- YOUTUBE & APPLE MUSIC ---
     if "youtube" in text_lower:
         if "search" in text_lower or "play" in text_lower or "find" in text_lower:
              # Extract query: "play lofi on youtube" -> "lofi"
              query = text_lower.replace("play", "").replace("search", "").replace("find", "").replace("on youtube", "").replace("for", "").replace("youtube", "").strip()
              return {"intent": "youtube_search", "args": query}
+             
+    if "apple music" in text_lower:
+        query = text_lower.replace("play", "").replace("search", "").replace("find", "").replace("on apple music", "").replace("for", "").replace("apple music", "").strip()
+        return {"intent": "apple_music_search", "args": query}
 
+    # --- NEWS ---
+    if "news" in text_lower or "headlines" in text_lower:
+        if "tech" in text_lower or "technology" in text_lower:
+            return {"intent": "news_tech", "args": ""}
+        return {"intent": "news_general", "args": ""}
+
+    # --- AUTOMATION (XDOTOOL) ---
+    if text_lower.startswith("type "):
+        content = text[5:] # Case sensitive for typing
+        return {"intent": "auto_type", "args": content}
+    
+    if text_lower.startswith("press "):
+        key = text_lower[6:].strip()
+        return {"intent": "auto_press", "args": key}
+
+    # --- LEARNING & FEEDBACK ---
+    if text_lower.startswith("learn that ") or text_lower.startswith("remember that "):
+        fact = text[11:] # "Learn that " is 11 chars
+        return {"intent": "learn_fact", "args": fact}
+
+    if "good job" in text_lower or "well done" in text_lower:
+        return {"intent": "feedback_positive", "args": ""}
+    
+    if "bad job" in text_lower or "you are wrong" in text_lower or "that is incorrect" in text_lower:
+         return {"intent": "feedback_negative", "args": ""}
+
+    if "tune yourself" in text_lower or "optimize systems" in text_lower:
+        return {"intent": "tune_self", "args": ""}
 
     # --- 2. AI Router (Optimized Qwen) ---
     ai_route = route_query_ai(text)

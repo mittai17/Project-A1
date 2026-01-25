@@ -126,6 +126,13 @@ def speak(text, vosk_model=None):
     text_clean = text.replace("*", "").replace("#", "").replace("`", "").strip()
     lang = detect_language(text_clean)
     
+    # Update Overlay Caption
+    try:
+        from core.overlay import get_overlay
+        get_overlay().update_captions(ai_text=text_clean)
+    except:
+        pass
+
     lang_name = "TAMIL" if lang == "ta" else "ENGLISH"
     print(f"{Fore.GREEN}[A1 ({lang_name})]: {text_clean}{Style.RESET_ALL}")
 

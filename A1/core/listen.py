@@ -31,6 +31,19 @@ def listen_for_command(vosk_model, timeout=10):
             print(f"{Fore.CYAN}[LISTEN] Listening...{Style.RESET_ALL}")
             
             while True:
+                # Check for GUI Input (Text)
+                import os
+                if os.path.exists("gui_input.txt"):
+                    try:
+                        with open("gui_input.txt", "r") as f:
+                            text = f.read().strip()
+                        os.remove("gui_input.txt")
+                        if text:
+                            print(f"{Fore.GREEN}        [GUI INPUT]: {text}{Style.RESET_ALL}")
+                            return text
+                    except:
+                        pass
+
                 if time.time() - start_time > timeout:
                     return None
                 
@@ -41,13 +54,25 @@ def listen_for_command(vosk_model, timeout=10):
                         text = res.get("text", "")
                         if text:
                             print(f"{Fore.GREEN}        [USER]: {text}{Style.RESET_ALL}")
+                            # Update Overlay Final
+                            try:
+                                from core.overlay import get_overlay
+                                get_overlay().update_captions(user_text=text)
+                            except: pass
                             return text
                     else:
                         # Partial Result (Debug)
                         partial = json.loads(rec.PartialResult())
                         if partial.get("partial"):
-                             sys.stdout.write(f"\r{Fore.BLUE}[PARTIAL]: {partial['partial']}{Style.RESET_ALL}")
+                             p_text = partial['partial']
+                             sys.stdout.write(f"\r{Fore.BLUE}[PARTIAL]: {p_text}{Style.RESET_ALL}")
                              sys.stdout.flush()
+                             # Update Overlay Partial
+                             try:
+                                from core.overlay import get_overlay
+                                get_overlay().update_captions(user_text=p_text)
+                             except: pass
+                             
                              # Reset timeout on activity
                              start_time = time.time()
 

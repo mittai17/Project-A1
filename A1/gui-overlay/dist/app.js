@@ -201,3 +201,50 @@ setInterval(pollState, 100);
 // Initialize
 setState(State.IDLE);
 console.log('[A1] UI Initialized');
+
+// ============================================================
+// INPUT HANDLING
+// ============================================================
+const inputContainer = document.getElementById('input-container');
+const commandInput = document.getElementById('command-input');
+
+document.addEventListener('keydown', (e) => {
+    // Toggle input on Space (if idle and not focused)
+    if (e.code === 'Space' && document.activeElement !== commandInput) {
+        if (currentState === State.IDLE) {
+            // Prevent scrolling if needed, but risky.
+            inputContainer.classList.add('active');
+            commandInput.focus();
+            e.preventDefault();
+        }
+    }
+    // Escape to closes
+    if (e.code === 'Escape') {
+        inputContainer.classList.remove('active');
+        commandInput.blur();
+    }
+});
+
+commandInput.addEventListener('keydown', async (e) => {
+    if (e.key === 'Enter') {
+        const text = commandInput.value.trim();
+        if (text) {
+            console.log(`[Input] Sending: ${text}`);
+            try {
+                await fetch(STATE_SERVER_URL, {
+                    method: 'POST',
+                    body: text
+                });
+                // Immediate feedback
+                setCaption('user', text);
+                setState(State.THINKING);
+
+            } catch (err) {
+                console.error("Failed to send input", err);
+            }
+            commandInput.value = '';
+            inputContainer.classList.remove('active');
+            commandInput.blur();
+        }
+    }
+});

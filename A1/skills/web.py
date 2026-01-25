@@ -41,3 +41,18 @@ def play_youtube(query: str):
     # Try using xdg-open which works on most Linux DEs
     subprocess.Popen(['xdg-open', url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return f"Playing {query} on YouTube."
+
+def play_apple_music(query: str):
+    """
+    Opens Apple Music with the search query.
+    """
+    import subprocess
+    import urllib.parse
+    
+    encoded_query = urllib.parse.quote(query)
+    url = f"https://music.apple.com/us/search?term={encoded_query}"
+    
+    print(f"{Fore.CYAN}[WEB] Opening Apple Music: {query}{Style.RESET_ALL}")
+    
+    subprocess.Popen(['xdg-open', url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return f"Playing {query} on Apple Music."
